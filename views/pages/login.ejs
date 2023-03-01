@@ -1,0 +1,40 @@
+<%- include ('../layouts/header') -%>
+<br>
+<br>
+<br>
+<form method="post" action="/login">
+    <fieldset style="border: 1px solid lightgray;">
+      <h2 style="text-align: center;">로그인</h2>
+      <div class="row my-3 mx-5 d-flex flex-column">
+        <div>
+          <label for="loginEmail" class="form-label">Email</label>
+          <input type="email" class="form-control" name="loginEmail" id="loginEmail">
+        </div>
+      </div>
+      <div class="row my-3 mx-5 d-flex flex-column">
+        <div>
+          <label for="loginPassword" class="form-label">Password</label>
+          <input type="password" class="form-control" name="loginPassword" id="loginPassword">
+        </div>
+      </div>
+      <input type="submit" class="btn btn-primary row my-3 mx-5" value="login"> 
+      <a class="row my-3 mx-5" href="/signin"> 회원가입으로 이동 </a>
+      <br>
+    </fieldset>
+</form>
+  
+
+
+<style>
+    
+    fieldset {
+        border: 1px solid lightgray;
+        padding: 40px;
+        border-radius: 10px;
+        max-width: 600px; 
+        min-width: 300px;
+        margin: auto;
+    }
+</style>
+
+<%- include ('../layouts/footer') -%>

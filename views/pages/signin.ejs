@@ -1,0 +1,36 @@
+<%- include ('../layouts/header') -%>
+<form method="post" action="/signin">
+    <div class="row my-3 mx-5 mt-5">
+        <label class="col-sm-2 col-form-label">Name</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" name="name" id="name">
+        </div>
+    </div>
+    <div class="row my-3 mx-5">
+      <label class="col-sm-2 col-form-label">age</label>
+      <div class="col-sm-10">
+        <input type="age" class="form-control" name="age" id="age">
+      </div>
+    </div>
+    <div class="row my-3 mx-5">
+      <label  class="col-sm-2 col-form-label">Email</label>
+      <div class="col-sm-10">
+        <input type="email" class="form-control" name="email" id="email">
+      </div>
+    </div>
+    <div class="row my-3 mx-5">
+      <label class="col-sm-2 col-form-label">Password</label>
+      <div class="col-sm-10">
+        <input type="password" class="form-control" name="password" id="password">
+      </div>
+    </div>
+    <div class="row my-3 mx-5">
+        <label class="col-sm-2 col-form-label">Password 확인</label>
+        <div class="col-sm-10">
+          <input type="password" class="form-control" name="rePassword" id="rePassword">
+        </div>
+    </div>
+    <input type="submit" class="btn btn-primary row my-3 mx-5" value="Sign up">
+    
+  </form>
+  <%- include ('../layouts/footer') -%>
