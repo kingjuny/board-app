@@ -10,6 +10,8 @@
   "dependencies": {
     "alphavantage": "^2.4.1",
     "axios": "^1.3.4",
+    "body-parser": "^1.20.2",
+    "crypto": "^1.0.1",
     "ejs": "^3.1.8",
     "express": "^4.18.2",
     "mysql": "^2.18.1",

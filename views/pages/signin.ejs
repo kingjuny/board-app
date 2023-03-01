@@ -3,34 +3,63 @@
     <div class="row my-3 mx-5 mt-5">
         <label class="col-sm-2 col-form-label">Name</label>
         <div class="col-sm-10">
-          <input type="text" class="form-control" name="name" id="name">
+          <input type="text" class="form-control" name="name" id="name" required>
         </div>
     </div>
     <div class="row my-3 mx-5">
       <label class="col-sm-2 col-form-label">age</label>
       <div class="col-sm-10">
-        <input type="age" class="form-control" name="age" id="age">
+        <input type="age" class="form-control" name="age" id="age" required>
       </div>
     </div>
     <div class="row my-3 mx-5">
       <label  class="col-sm-2 col-form-label">Email</label>
       <div class="col-sm-10">
-        <input type="email" class="form-control" name="email" id="email">
+        <input type="email" class="form-control" name="email" id="email" required>
       </div>
     </div>
     <div class="row my-3 mx-5">
       <label class="col-sm-2 col-form-label">Password</label>
       <div class="col-sm-10">
-        <input type="password" class="form-control" name="password" id="password">
+        <input type="password" class="form-control" name="password" id="password"required>
       </div>
     </div>
     <div class="row my-3 mx-5">
         <label class="col-sm-2 col-form-label">Password 확인</label>
         <div class="col-sm-10">
-          <input type="password" class="form-control" name="rePassword" id="rePassword">
+          <input type="password" class="form-control" name="rePassword" id="rePassword" required>
+          
         </div>
+        
+    </div>
+    <div id="rePasswordError" class="row my-3 mx-5" style="display:none;color:red;">
+      비밀번호와 비밀번호 확인이 일치하지 않습니다.
     </div>
     <input type="submit" class="btn btn-primary row my-3 mx-5" value="Sign up">
     
   </form>
+  <script>
+    document.addEventListener('DOMContentLoaded', ()=> {
+        const form = document.querySelector('form');
+        const password = form.querySelector('input[name="password"]');
+        const rePassword = form.querySelector('input[name="rePassword"]');
+        const rePasswordError = document.getElementById('rePasswordError');
+
+        form.addEventListener('submit', (event)=> {
+            if (password.value !== rePassword.value) {
+                event.preventDefault();
+                rePasswordError.style.display = 'block';
+            }
+        });
+
+        rePassword.addEventListener('input', ()=> {
+            if (password.value === rePassword.value) {
+                rePasswordError.style.display = 'none';
+            } else {
+                rePasswordError.style.display = 'block';
+            }
+        });
+    });
+</script>
+
   <%- include ('../layouts/footer') -%>
