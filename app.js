@@ -1,6 +1,7 @@
 const express = require("express");
 const mysql = require("mysql");
-
+const session = require("express-session");
+const mySQLstore = require("express-mysql-session")(session);
 const crypto = require("crypto");
 const dbconfig = require("./config/dbconfig.json")//데이터베이스 정보
 const app = express();
@@ -24,6 +25,14 @@ const connection = mysql.createConnection({
 });
 // DB 접속
 connection.connect();
+//세션 미들웨어
+app.use(session({
+  secret : '!@#$%^&*',
+  store : new mySQLstore(dbconfig),
+  resave : false,
+  saveUninitialized : false,
+  
+}));
 
 app.get("/", (req, res) => {
   res.render("pages/home")
@@ -36,6 +45,7 @@ app.get("/login", (req, res) => {
 })
 app.post("/login",(req,res) => {
   const loginid =req.body.loginEmail;
+  const loginpassword =req.body.loginPassword;
   const sql ="SELECT * FROM users WHERE id=? ;"
   connection.query(sql,[loginid],(err,results)=>{
     if(err) throw err
@@ -45,10 +55,21 @@ app.post("/login",(req,res) => {
       res.send("<script>alert('아이디를 확인하세요.'); window.location.replace('/login');</script>");
     }
     else{
-
-    }
+      const user = results[0];
+      crypto.pbkdf2(loginpassword,user.salt, 1, 32, 'sha512',(err,derivedkey)=>{
+          if(err) console.log(err);
+          if(derivedkey.toString('base64')===user.password){
+              console.log("성공");
+              req.session.user = loginid;//현재 여기서 오류
+              res.redirect('/');
+          }
+          else{
+              console.log("pw틀림");
+              res.send("<script>alert('비밀번호가 틀렸습니다.'); window.location.replace('/login');</script>");
+          }
+      }); 
+    } 
   })
-
 })
 
 app.get("/signin", (req, res) => {
