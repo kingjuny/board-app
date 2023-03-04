@@ -33,8 +33,11 @@
                     </ul>
                     <div class="align-top">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0" style="font-size: smaller; ">
+                        <% if(!locals.logined) { %>
                         <a class="nav-link" href="/login">로그인</a>
-                        <a class="nav-link" href="/signin">회원가입</a>
+                        <% }else{ %>
+                        <a class="nav-link" href="/logout">로그아웃</a>
+                        <% } %>
                       </ul>
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">

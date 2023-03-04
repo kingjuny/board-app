@@ -25,24 +25,45 @@ const connection = mysql.createConnection({
 });
 // DB 접속
 connection.connect();
+
 //세션 미들웨어
 app.use(session({
   secret : '!@#$%^&*',
   store : new mySQLstore(dbconfig),
   resave : false,
   saveUninitialized : false,
-  
 }));
-
-app.get("/", (req, res) => {
-  res.render("pages/home")
+//로그인 후에 이용가능 미들웨어
+const requireLogin = (req, res, next) => {
+  if (!req.session.user) {
+    res.redirect('/login');
+  } else {
+    res.locals.logined = true;
+    next();
+  } 
+};
+//로그인 후 로그인,회원가입 클릭시  이용가능 미들웨어
+const norequireLogin = (req, res, next) => {
+  if (req.session.user) {
+    res.redirect('/');
+  } else {
+    next();
+  } 
+};
+ 
+app.get("/",requireLogin, (req, res) => {
+  res.render("pages/home") 
+  console.log(req.session)
 })
-app.get("/search_board", (req, res) => {
+
+app.get("/search_board",requireLogin, (req, res) => {
   res.render("pages/search_board")
 })
-app.get("/login", (req, res) => {
+
+app.get("/login",norequireLogin, (req, res) => {
   res.render("pages/login")
 })
+
 app.post("/login",(req,res) => {
   const loginid =req.body.loginEmail;
   const loginpassword =req.body.loginPassword;
@@ -57,22 +78,23 @@ app.post("/login",(req,res) => {
     else{
       const user = results[0];
       crypto.pbkdf2(loginpassword,user.salt, 1, 32, 'sha512',(err,derivedkey)=>{
-          if(err) console.log(err);
-          if(derivedkey.toString('base64')===user.password){
-              console.log("성공");
-              req.session.user = loginid;//현재 여기서 오류
-              res.redirect('/');
-          }
-          else{
-              console.log("pw틀림");
-              res.send("<script>alert('비밀번호가 틀렸습니다.'); window.location.replace('/login');</script>");
-          }
+        if(err) console.log(err);
+        if(derivedkey.toString('base64')===user.password){
+            console.log(req.session.user)
+            console.log("성공");
+            req.session.user = loginid;
+            res.redirect('/');
+        }
+        else{
+            console.log("pw틀림");
+            res.send("<script>alert('비밀번호가 틀렸습니다.'); window.location.replace('/login');</script>");
+        }
       }); 
     } 
   })
 })
 
-app.get("/signin", (req, res) => {
+app.get("/signin",norequireLogin, (req, res) => {
   res.render("pages/signin")
 })
 
@@ -103,7 +125,7 @@ app.post("/signin",(req,res)=>{
     }
   }); 
 });
-app.get("/mypage", (req, res) => {
+app.get("/mypage",requireLogin, (req, res) => {
     res.render("pages/mypage")
 })
   
@@ -113,6 +135,11 @@ res.render("pages/stock_news")
 
 app.get("/ranking", (req, res) => {
 res.render("pages/ranking")
+})
+app.get("/logout",(req,res)=>{
+  req.session.destroy(function(err){
+      res.redirect('/login')
+  })
 })
 
 app.listen(port, () => {
