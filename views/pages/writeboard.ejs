@@ -1,0 +1,16 @@
+<%- include ('../layouts/header') -%>
+<form method="post" action="/board/write">
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">제목</span>
+        <input type="text" id='title' class="form-control" placeholder="제목을 입력해주세요." aria-label="Username"
+            aria-describedby="basic-addon1" name="title" required>
+    </div>
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">내용</span>
+        <input type="text" id='contents' class="form-control" placeholder="내용을 입력해주세요." aria-label="Username"
+            aria-describedby="basic-addon1" style="width:300px;height:400px;" name="content" required>
+    </div>
+    <input type="submit" class="btn btn-primary row my-3 mx-5" value="글쓰기"> 
+</form>
+
+<%- include ('../layouts/footer') -%>

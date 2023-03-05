@@ -60,7 +60,46 @@ app.get("/",requireLogin, (req, res) => {
 app.get("/search_board",requireLogin, (req, res) => {
   connection.query('SELECT * FROM board', function(error, results, fields) {
     if (error) throw error;
-    res.render("pages/search_board",{results: results})
+    else{
+      res.render("pages/search_board",{results: results})
+    }
+  })
+})
+
+app.get("/board/write",requireLogin,(req,res) => {
+  
+  console.log(req.session.id)
+  console.log(req.session.user)
+  res.render('pages/writeboard');
+  
+});
+//게시판 글작성
+app.post('/board/write', express.json(), (req, res) => {
+  const sql = 'INSERT INTO board (title, writer, content) VALUES (?, ?, ?);';
+  const params = [req.body.title,req.session.user, req.body.content];
+  
+  connection.query(sql, params, (err, rows, fileds) => {
+    if (err) throw err;
+    else{
+      console.log(rows.insertId,"번 게시글 등록");
+      res.redirect(`/board/read/${rows.insertId}`)
+    }
+  })
+}) 
+//글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
+app.get('/board/read/:id',requireLogin, (req, res, next) => {
+  connection.query('SELECT * from board', (err, rows) => {
+      if (err) throw err;
+      const article = rows.find(art => art.idx === parseInt(req.params.id));
+      if(!article) {
+      return res.status(404).send('ID was not found.');
+      }    
+      // 조회수 증가
+      connection.query('UPDATE board SET view_cnt = view_cnt + 1 WHERE idx = ?', [article.idx], (err, result) => {
+          if (err) throw err;
+          console.log('views updated for article with id: ', article.idx);
+      });
+      res.render('pages/readBoard',{ session : req.session , article : article});
   })
 })
 

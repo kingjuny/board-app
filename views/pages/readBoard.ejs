@@ -1,0 +1,46 @@
+<%- include('../layouts/header') -%>
+<% const insertTime = new Date(article.insert_time);
+const year = insertTime.getFullYear();
+const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+const date = insertTime.getDate();
+const formattedDate = `${year}년 ${month}월 ${date}일`; %>
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">제목</span>
+        <input type="text" id='title' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.title %> readonly>
+    </div>
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">작성자명</span>
+        <input type="text" id='name' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.writer %> readonly>
+    </div>
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">작성날짜</span>
+        <input type="text" id='day' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value="<%= formattedDate %>" readonly> 
+    </div>
+    <div class="input-group mb-3">
+        <span class="input-group-text" id="basic-addon1">내용</span>
+        <input type="text" id='contents' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.content %> readonly>
+    </div>
+
+
+
+    <% if(session.user===article.writer) { %>
+        <button type="button" id="updateButton" class="btn btn-primary" onclick="location.href='/board/update/<%= article.idx %>'">수정하기</button> 
+        <button type="button" id="deleteButton" class="btn btn-danger">삭제하기</button>
+    <% } %>
+    
+    <script>
+        jQuery(document).ready(function() {
+            console.log("ready!"); // 이 줄이 실행되는지 확인해 보세요.
+
+            jQuery('#deleteButton').click(function() {
+                var result = confirm('게시글을 삭제하시겠습니까?');
+                if (result) {
+                    jQuery.post('/board/delete/' + '<%= article.idx %>', function(data) {
+                    alert('게시글이 삭제되었습니다.');
+                    location.href = '/board';
+                    });
+                }
+            });
+        });
+    </script>
+<%- include('../layouts/footer') -%>
