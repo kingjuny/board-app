@@ -52,12 +52,16 @@ const norequireLogin = (req, res, next) => {
 };
  
 app.get("/",requireLogin, (req, res) => {
-  res.render("pages/home") 
-  console.log(req.session)
-})
+  
+    res.render("pages/home") 
+  });
+
 
 app.get("/search_board",requireLogin, (req, res) => {
-  res.render("pages/search_board")
+  connection.query('SELECT * FROM board', function(error, results, fields) {
+    if (error) throw error;
+    res.render("pages/search_board",{results: results})
+  })
 })
 
 app.get("/login",norequireLogin, (req, res) => {
