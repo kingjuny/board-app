@@ -31,13 +31,12 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
     <script>
         jQuery(document).ready(function() {
             console.log("ready!"); // 이 줄이 실행되는지 확인해 보세요.
-
             jQuery('#deleteButton').click(function() {
                 var result = confirm('게시글을 삭제하시겠습니까?');
                 if (result) {
                     jQuery.post('/board/delete/' + '<%= article.idx %>', function(data) {
                     alert('게시글이 삭제되었습니다.');
-                    location.href = '/board';
+                    location.href = '/search_board';
                     });
                 }
             });

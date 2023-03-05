@@ -102,6 +102,49 @@ app.get('/board/read/:id',requireLogin, (req, res, next) => {
       res.render('pages/readBoard',{ session : req.session , article : article});
   })
 })
+//글 수정 화면
+app.get('/board/update/:id', (req, res, next) => {
+  connection.query('SELECT * from board', (err, rows) => {
+    if (err) throw err;
+    const article = rows.find(art => art.idx === parseInt(req.params.id));
+    if(!article) {
+    return res.status(404).send('ID was not found.');
+    } 
+    else if(req.session.user!=article.writer){
+        res.redirect("/search_board"); 
+    }else{
+        res.render('pages/updateBoard',{article : article});
+    }
+  })
+})
+
+app.post('/board/update/:id', express.json(), (req, res, next) => {
+  connection.query('SELECT * from board', (err, rows, fildes) => { 
+    if (err) throw err;
+    const article = rows.find(art => art.idx === parseInt(req.params.id));
+    if(!article) {
+      return res.status(404).send('ID was not found.');
+    } 
+    console.log(req.body)
+    const sql = 'UPDATE board SET title = ?, writer = ?, content = ? WHERE idx = ?';
+    const params = [req.body.title, req.session.user, req.body.content, req.params.id];
+    console.log(params)
+    connection.query(sql, params, (err, rows, fileds) => {
+      if (err) throw err;
+      console.log(rows);
+    })
+    // 데이터를 URL 쿼리 문자열로 전달
+    res.redirect(`/board/read/${req.params.id}`) 
+  })
+})
+
+//게시판 글삭제
+app.post('/board/delete/:id', (req, res, next) => {
+  connection.query('DELETE FROM board WHERE idx = ?', [req.params.id], (err, rows, fileds) => {
+    if (err) throw err;
+    res.send('게시글이 삭제되었습니다.');
+  });
+});
 
 app.get("/login",norequireLogin, (req, res) => {
   res.render("pages/login")
