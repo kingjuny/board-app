@@ -1,0 +1,22 @@
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">조회수</th>
+        <th scope="col">제목</th>
+        <th scope="col">작성자</th>
+        <th scope="col">작성일</th>
+      </tr>
+    </thead>
+    <tbody id="boardMaster">
+      <% for (let i = 0; i < results.length; i++) { %>
+        <tr>
+          <td><%= results[i].view_cnt %></td>
+          <td><a href="/board/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
+          <td><%= results[i].writer %></td>
+          <td><%= results[i].insert_time %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+
+<button type="button" class="btn btn-info" onclick="location.href='/board/write'">글쓰기</button>

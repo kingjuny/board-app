@@ -212,7 +212,21 @@ app.post("/signin",(req,res)=>{
   }); 
 });
 app.get("/mypage",requireLogin, (req, res) => {
-    res.render("pages/mypage")
+  connection.query('SELECT * FROM users;', (err, rows) => {
+    console.log(req.session.user)
+    if (err) throw err;
+    const article = rows.find(art => art.id === req.session.user);
+    if(!article) {
+    return res.status(404).send('ID was not found.');
+    }    
+    connection.query('SELECT * FROM board WHERE writer = ?;',[req.session.user], function(error, results, fields) {
+      if (error) throw error;
+      else{
+        res.render('pages/mypage',{ session : req.session , article : article , results: results});
+      }
+    });
+    
+  })
 })
   
 app.get("/stock_news", (req, res) => {
