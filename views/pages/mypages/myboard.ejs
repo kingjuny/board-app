@@ -3,7 +3,6 @@
       <tr>
         <th scope="col">조회수</th>
         <th scope="col">제목</th>
-        <th scope="col">작성자</th>
         <th scope="col">작성일</th>
       </tr>
     </thead>
@@ -12,7 +11,6 @@
         <tr>
           <td><%= results[i].view_cnt %></td>
           <td><a href="/board/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
-          <td><%= results[i].writer %></td>
           <td><%= results[i].insert_time %></td>
         </tr>
       <% } %>

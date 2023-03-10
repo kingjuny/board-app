@@ -58,7 +58,7 @@ app.get("/",requireLogin, (req, res) => {
 
 
 app.get("/search_board",requireLogin, (req, res) => {
-  connection.query('SELECT * FROM board', function(error, results, fields) {
+  connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', function(error, results, fields) {
     if (error) throw error;
     else{
       res.render("pages/search_board",{results: results})
@@ -83,12 +83,12 @@ app.post('/board/write', express.json(), (req, res) => {
     else{
       console.log(rows.insertId,"번 게시글 등록");
       res.redirect(`/board/read/${rows.insertId}`)
-    }
+    } 
   })
 }) 
 //글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
 app.get('/board/read/:id',requireLogin, (req, res, next) => {
-  connection.query('SELECT * from board', (err, rows) => {
+  connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', (err, rows) => {
       if (err) throw err;
       const article = rows.find(art => art.idx === parseInt(req.params.id));
       if(!article) {
@@ -168,6 +168,7 @@ app.post("/login",(req,res) => {
         if(derivedkey.toString('base64')===user.password){
             console.log(req.session.user)
             console.log("성공");
+            req.session.nickname = req.body.nickname;
             req.session.user = loginid;
             res.redirect('/');
         }
@@ -188,7 +189,7 @@ app.post("/signin",(req,res)=>{
 
   const salt = crypto.randomBytes(32).toString('base64')// 솔트 생성
   const hashedPw = crypto.pbkdf2Sync(req.body.password, salt, 1, 32, 'sha512').toString('base64')
-  const param = [req.body.email,req.body.name,req.body.age,hashedPw,salt]
+  const param = [req.body.email,req.body.name,req.body.nickname,req.body.age,hashedPw,salt]
   // 같은 아이디가 있는지확인
   connection.query("SELECT * FROM `nodeapp`.`users` WHERE `id` = ? ;",[req.body.email],(err, rows) => {
     if (err) {
@@ -199,7 +200,7 @@ app.post("/signin",(req,res)=>{
         res.send("<script>alert(`이미 등록된 이메일입니다.`); window.location.replace('/signin');</script>");
       } 
       else{
-        connection.query('INSERT INTO `nodeapp`.`users` (`id`, `name`, `age`, `password`, `salt`) VALUES (?,?,?,?,?)',param,(err,row) =>{
+        connection.query('INSERT INTO `nodeapp`.`users` (`id`, `name`, `nickname`, `age`, `password`, `salt`) VALUES (?,?,?,?,?,?)',param,(err,row) =>{
           if(err) 
               console.log(err);
           else{

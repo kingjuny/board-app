@@ -8,6 +8,10 @@
     <input type="text" id='name' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.id %> readonly>
 </div>
 <div class="input-group mb-3">
+    <span class="input-group-text" id="basic-addon1">닉네임</span>
+    <input type="text" id='title' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.nickname ||"없음" %> readonly>
+</div>
+<div class="input-group mb-3">
     <span class="input-group-text" id="basic-addon1">나이</span>
     <input type="text" id='day' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.age %> readonly> 
 </div>
