@@ -1,0 +1,26 @@
+<table class="table">
+    <thead>
+      <tr>
+        <th scope="col">좋아요</th>
+        <th scope="col">제목</th>
+        <th scope="col">작성자</th>
+        <th scope="col">좋아요 날짜</th>
+      </tr>
+    </thead>
+    <tbody id="boardMaster">
+      <% for (let i = 0; i < likes.length; i++) { %>
+        <tr>
+          <td>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+            </svg>
+            <%= likes[i].likes_cnt %>
+          </td>
+          <td><a href="/board/read/<%= likes[i].idx %>"><%= likes[i].title %></a></td>
+          <td><%= likes[i].nickname %></td>
+          <td><%= likes[i].created_at %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+

@@ -266,9 +266,13 @@ app.get("/mypage",requireLogin, (req, res) => {
     }    
     connection.query('SELECT * FROM board WHERE writer = ?;',[req.session.user], function(error, results, fields) {
       if (error) throw error;
-      else{
-        res.render('pages/mypage',{ session : req.session , article : article , results: results});
-      }
+      connection.query('SELECT likes.board_id, likes.user_id, likes.created_at, board.idx, board.title, board.likes_cnt, users.nickname FROM likes INNER JOIN board ON likes.board_id = board.idx INNER JOIN users ON board.writer = users.id WHERE likes.user_id =?;',
+        [req.session.user], function(error, likes, fields) {
+        if (error) throw error;
+        else{
+          res.render('pages/mypage',{ session : req.session , article : article , results: results , likes: likes});
+        }
+      });
     });
     
   })

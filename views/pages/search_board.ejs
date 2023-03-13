@@ -5,7 +5,9 @@
         <th scope="col">조회수</th>
         <th scope="col">제목</th>
         <th scope="col">작성자</th>
+        <th scope="col">좋아요</th>
         <th scope="col">작성일</th>
+        
       </tr>
     </thead>
     <tbody id="boardMaster">
@@ -14,7 +16,13 @@
           <td><%= results[i].view_cnt %></td>
           <td><a href="/board/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
           <td><%= results[i].nickname %></td>
+          <td>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+            </svg><%= results[i].likes_cnt %>
+          </td>
           <td><%= results[i].insert_time %></td>
+          
         </tr>
       <% } %>
     </tbody>
