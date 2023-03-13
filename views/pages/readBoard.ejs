@@ -4,6 +4,17 @@ const year = insertTime.getFullYear();
 const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
 const date = insertTime.getDate();
 const formattedDate = `${year}년 ${month}월 ${date}일`; %>
+
+    
+    <button type="button" class="btn btn-outline-danger btn-like" article-id="<%= article.idx %>">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+        </svg>
+        <span class="count"><%= article.likes_cnt %></span>
+    </button>
+
+  
+    
     <div class="input-group mb-3">
         <span class="input-group-text" id="basic-addon1">제목</span>
         <input type="text" id='title' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.title %> readonly>
@@ -29,6 +40,16 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
     <% } %>
     
     <script>
+        jQuery(document).ready(function() {
+            console.log("ready!");
+            jQuery('.btn-like').click(function() {
+                var articleId = jQuery(this).attr('article-id');
+                jQuery.post('/likes/' + articleId, function(data) {
+                    jQuery('.count').text(data.likes_cnt);
+                });
+            });
+        });
+
         jQuery(document).ready(function() {
             console.log("ready!"); // 이 줄이 실행되는지 확인해 보세요.
             jQuery('#deleteButton').click(function() {
