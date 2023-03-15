@@ -4,6 +4,9 @@ const session = require("express-session");
 const mySQLstore = require("express-mysql-session")(session);
 const crypto = require("crypto");
 const dbconfig = require("./config/dbconfig.json")//데이터베이스 정보
+//이미지 업로드
+const multer = require('multer');
+const path = require('path');
 const app = express();
 const port = 3000;
 
@@ -25,6 +28,17 @@ const connection = mysql.createConnection({
 });
 // DB 접속
 connection.connect();
+// multer 미들웨어 설정
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, 'public/images'); // 이미지 파일 저장 경로 설정
+  },
+  filename: function (req, file, cb) {
+      const ext = path.extname(file.originalname); // 파일 확장자 추출
+      cb(null, `${Date.now()}${ext}`); // 파일 이름 설정 (현재 시간 + 확장자)
+  }
+});
+const upload = multer({ storage: storage });
 
 //세션 미들웨어
 app.use(session({
@@ -72,20 +86,27 @@ app.get("/board/write",requireLogin,(req,res) => {
   console.log(req.session.user)
   res.render('pages/writeboard');
   
-});
+}); 
 //게시판 글작성
-app.post('/board/write', express.json(), (req, res) => {
-  const sql = 'INSERT INTO board (title, writer, content) VALUES (?, ?, ?);';
-  const params = [req.body.title,req.session.user, req.body.content];
+app.post('/board/write', express.json(), upload.array('images[]'), (req, res) => {
+  const sql = 'INSERT INTO board (title, writer, content, image_path) VALUES (?, ?, ?, ?);';
+  let images = null;
+  if (req.files && req.files.length > 0) {
+    images = req.files.map(file => `public/images/${file.filename}`);
+  }
+  const params = [req.body.title, req.session.user, req.body.content, JSON.stringify(images)];
   
-  connection.query(sql, params, (err, rows, fileds) => {
+  connection.query(sql, params, (err, rows, fields) => {
     if (err) throw err;
-    else{
-      console.log(rows.insertId,"번 게시글 등록");
+    else {
+      console.log(rows.insertId, "번 게시글 등록");
       res.redirect(`/board/read/${rows.insertId}`)
     } 
   })
-}) 
+});
+
+
+
 //글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
 app.get('/board/read/:id',requireLogin, (req, res, next) => {
   connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', (err, rows) => {
@@ -103,7 +124,7 @@ app.get('/board/read/:id',requireLogin, (req, res, next) => {
   })
 })
 //글 수정 화면
-app.get('/board/update/:id', (req, res, next) => {
+app.get('/board/update/:id',upload.array('images'), (req, res, next) => {
   connection.query('SELECT * from board', (err, rows) => {
     if (err) throw err;
     const article = rows.find(art => art.idx === parseInt(req.params.id));
