@@ -4,33 +4,61 @@ const year = insertTime.getFullYear();
 const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
 const date = insertTime.getDate();
 const formattedDate = `${year}년 ${month}월 ${date}일`; %>
+<style>
+   
+    .board {
+        border: 1px solid lightgray;
+        padding: 40px;
+        border-radius: 10px;
+        max-width: 1000px; 
+        min-width: 300px;
+        margin: auto;
+    }
+  </style>
 
-    
-    <button type="button" class="btn btn-outline-danger btn-like" article-id="<%= article.idx %>">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
-        </svg>
-        <span class="count"><%= article.likes_cnt %></span>
-    </button>
 
-  
+    <div class="board">
     
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1">제목</span>
-        <input type="text" id='title' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.title %> readonly>
+    <div class="input-group">
+        <h2 id='title'><%= article.title %></h2>
     </div>
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1">작성자명</span>
-        <input type="text" id='name' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.nickname %> readonly>
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h6 id='nickname'><%= article.nickname %></h6>
+        </div>
+        <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-outline-danger btn-like" article-id="<%= article.idx %>">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+                </svg>
+                <span class="count"><%= article.likes_cnt %></span>
+            </button>
+        </div>
     </div>
-    <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1">작성날짜</span>
-        <input type="text" id='day' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value="<%= formattedDate %>" readonly> 
+    <div style="display: flex; align-items: center;">
+        <a id='insert_time' style="font-size: smaller; color: #888; padding-right: 10px;"><%= formattedDate %></a>
+        <a id='view_cnt' style="font-size: smaller; color: #888;"><%= '조회 ' + article.view_cnt %></a>
     </div>
+    
+    
+    
+    
+    <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);"> 
     <div class="input-group mb-3">
-        <span class="input-group-text" id="basic-addon1">내용</span>
-        <input type="text" id='contents' class="form-control" aria-label="Username" aria-describedby="basic-addon1" value=<%= article.content %> readonly>
+        
+        <div class="iput-group mb-3">
+            <div><%= article.content %></div>
+            <% if(article.image_path) { %>
+              <% const images = JSON.parse(article.image_path); %>
+              <% images.forEach(function(image) { %>
+                <img src="<%= image %>" alt="이미지" style="width:auto;height:auto;" />
+              <% }); %>
+            <% } %>
+        </div>
+
     </div>
+    
+    
 
 
 
@@ -38,6 +66,9 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
         <button type="button" id="updateButton" class="btn btn-primary" onclick="location.href='/board/update/<%= article.idx %>'">수정하기</button> 
         <button type="button" id="deleteButton" class="btn btn-danger">삭제하기</button>
     <% } %>
+      
+</div>
+
     
     <script>
         jQuery(document).ready(function() {

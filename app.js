@@ -39,9 +39,9 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
-
+app.use(express.static('public'));//public 디렉토리를 정적 파일 제공을 위한 디렉토리로 설정
 //세션 미들웨어
-app.use(session({
+app.use(session({ 
   secret : '!@#$%^&*',
   store : new mySQLstore(dbconfig),
   resave : false,
@@ -92,8 +92,8 @@ app.post('/board/write', express.json(), upload.array('images[]'), (req, res) =>
   const sql = 'INSERT INTO board (title, writer, content, image_path) VALUES (?, ?, ?, ?);';
   let images = null;
   if (req.files && req.files.length > 0) {
-    images = req.files.map(file => `public/images/${file.filename}`);
-  }
+    images = req.files.map(file => `/images/${file.filename}`);
+  }  
   const params = [req.body.title, req.session.user, req.body.content, JSON.stringify(images)];
   
   connection.query(sql, params, (err, rows, fields) => {
@@ -102,13 +102,13 @@ app.post('/board/write', express.json(), upload.array('images[]'), (req, res) =>
       console.log(rows.insertId, "번 게시글 등록");
       res.redirect(`/board/read/${rows.insertId}`)
     } 
-  })
+  }) 
 });
 
-
+ 
 
 //글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
-app.get('/board/read/:id',requireLogin, (req, res, next) => {
+app.get('/board/read/:id',requireLogin, (req, res, next) => { 
   connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', (err, rows) => {
       if (err) throw err;
       const article = rows.find(art => art.idx === parseInt(req.params.id));
