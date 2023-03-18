@@ -120,7 +120,14 @@ app.get('/board/read/:id',requireLogin, (req, res, next) => {
           if (err) throw err;
           console.log('views updated for article with id: ', article.idx);
       });
-      res.render('pages/readBoard',{ session : req.session , article : article});
+      //댓글 조회
+      connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ?', [req.params.id], (err, results) => {
+        if (err) throw err;
+        
+        res.render('pages/readBoard',{ session : req.session , article : article ,comment : results });
+    });
+
+      
   })
 })
 //글 수정 화면
@@ -170,6 +177,26 @@ app.post('/board/delete/:id', (req, res, next) => {
 app.get("/login",norequireLogin, (req, res) => {
   res.render("pages/login")
 })
+
+//게시판 댓글 생성
+app.post("/board/comment/:id", (req, res, next) => {
+  connection.query(
+    "INSERT INTO comment (writer, content, board_id) VALUES (?, ?, ?);",
+    [req.session.user, req.body.comment_content, req.params.id],
+    (err, rows, fileds) => {
+      if (err) throw err;
+      else {  
+        console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
+        const comment = {
+          writer: req.session.user,
+          content: req.body.comment_content,
+        };
+        res.status(200).json(comment);
+      }
+    }
+  );
+});
+
 
 
 //좋아요 클릭시 작동
