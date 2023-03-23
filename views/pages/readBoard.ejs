@@ -4,21 +4,23 @@ const year = insertTime.getFullYear();
 const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
 const date = insertTime.getDate();
 const formattedDate = `${year}년 ${month}월 ${date}일`; %>
-<style>
-   
-    .board {
-        border: 1px solid lightgray;
-        padding: 40px;
-        border-radius: 10px;
-        max-width: 1000px; 
-        min-width: 300px;
-        margin: auto;
-    }
-    
-  </style>
+    <style>
+        .board {
+            border: 1px solid lightgray;
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 1000px; 
+            min-width: 300px;
+            margin: auto;
+        }
+        
+        .dropdown-wrapper.show-menu img {
+        display: none;
+        }
+    </style>
 
 
-    <div class="board">
+<div class="board">
     
     <div class="input-group">
         <h2 id='title'><%= article.title %></h2>
@@ -69,18 +71,32 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
     <% } %>
     <div class="comment-section" style="margin-top: 10px;">
         <h3>댓글</h3>
-        <ul id="comment-list">
+        <ul id="comment-list" >
             <% for (let i = 0; i < comment.length; i++) { %>
-              <li>
-                <p><%= comment[i].nickname %></p>
-                <p><%= comment[i].content %></p>
-                <p style="font-size: smaller; color: #888;"><%= comment[i].created_at %></p>
-              </li>
-              <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);">
+                <li class="comment" >
+                    <p style="font-weight: bolder;"><%= comment[i].nickname %></p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;" data-comment-id="<%= comment[i].id %>">
+                        <p class="comment-content" style="margin: 0;"><%= comment[i].content %></p>
+                        
+                        <div class="dropdown comment-actions dropdown-wrapper"> 
+                            <img class = "action-btn"src="/images/pngegg.png" style="width: 20px; height: 20px; " data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                <% if(session.user===comment[i].writer) { %>
+                                    <button id="edit-comment-<%= comment[i].id %>" class="dropdown-item" href="#" >수정</button>
+                                    <button id="delete-comment-<%= comment[i].id %>" class="dropdown-item"href="#">삭제</button>  
+                                <% } else { %>
+                                    <a class="dropdown-item"  href="#">신고</a>
+                                <% } %>
+                            </ul>
+                        </div>
+                        
+                    </div>
+                    <p style="font-size: smaller; color: #888;"><%= comment[i].created_at %></p>
+                </li>
+                <hr style="border: none; border-top: 1px solid rgb(131, 130, 130); ">
             <% } %>
-          </ul>
-          
-      
+        </ul>
+        
         <form id="comment-form" >
           <div class="form-group">
             <label for="comment-content">댓글 쓰기</label>
@@ -94,57 +110,186 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
     
 
     
-    <script>
-        jQuery(document).ready(function() {
-            console.log("ready!");
-            jQuery('.btn-like').click(function() {
-                var articleId = jQuery(this).attr('article-id');
-                jQuery.post('/likes/' + articleId, function(data) {
-                    jQuery('.count').text(data.likes_cnt);
+<script>
+    
+    jQuery(document).ready(function() {
+        console.log("ready!");
+        jQuery('.btn-like').click(function() {
+            var articleId = jQuery(this).attr('article-id');
+            jQuery.post('/likes/' + articleId, function(data) {
+                jQuery('.count').text(data.likes_cnt);
+            });
+        });
+    });
+
+
+    
+
+
+   // 이벤트 위임 방식으로 수정, 삭제 버튼에 클릭 이벤트 등록
+document.querySelector('#comment-list').addEventListener('click', (event) => {
+  const target = event.target;
+  if (target.tagName === 'BUTTON') {
+    const id = target.id;
+    const tokens = id.split('-');
+ 
+    const action = tokens[0]; // 'edit' 또는 'delete'
+    const commentId = tokens[2]; // 댓글 인덱스
+    if (action === 'edit') {
+        console.log(1)
+      const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`).parentElement;
+      
+      const commentContentElement = commentElement.querySelector('.comment-content');
+      console.log(tokens)
+      const commentContent = commentContentElement.textContent.trim();
+      
+      // 댓글 내용을 input 요소로 변경
+      commentContentElement.innerHTML = `<input type="text" value="${commentContent}" class="form-control" name="edit_comment">`;
+      // 저장 버튼 생성
+      const saveBtn = document.createElement('button');
+      saveBtn.classList.add('btn', 'btn-primary', 'save-comment-btn');
+      saveBtn.textContent = '저장';
+      // 취소 버튼 생성
+      const cancelBtn = document.createElement('button');
+      cancelBtn.classList.add('btn', 'btn-secondary', 'cancel-comment-btn');
+      cancelBtn.textContent = '취소';
+      // 이미지 버튼 숨기기
+        const actionsWrapper = commentElement.querySelector('.comment-actions');
+        const imageBtn = actionsWrapper.querySelector('.action-btn');
+        imageBtn.style.display = 'none';
+        // 저장 버튼과 취소 버튼을 추가
+      commentElement.querySelector('.comment-actions').append(saveBtn, cancelBtn);
+
+      // 저장 버튼 클릭 이벤트 핸들러 등록
+      saveBtn.addEventListener('click', () => {
+        const updatedCommentContent = commentElement.querySelector('[name="edit_comment"]').value;
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/board/comment/${commentId}/${action}`);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        console.log(222)
+        
+        
+        // 댓글 수정 성공 시, 서버로부터 업데이트된 댓글 리스트를 받아와서 렌더링
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const updatedCommentList = JSON.parse(xhr.responseText).comment;
+                
+                const commentListElement = document.getElementById('comment-list');
+                console.log(updatedCommentList)
+                commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+                for (let i = 0; i < updatedCommentList.length; i++) {
+                const comment = updatedCommentList[i];
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+                commentListElement.appendChild(commentElement);
+                }
+            }
+        };
+        xhr.send(JSON.stringify({ content: updatedCommentContent ,boardId: "<%= article.idx %>" }));
+      });
+
+      // 취소 버튼 클릭 이벤트 핸들러 등록
+      cancelBtn.addEventListener('click', () => {
+        commentContentElement.textContent = commentContent;
+        saveBtn.remove();
+        cancelBtn.remove();
+        // 이미지 버튼 다시 보이게 하기
+        imageBtn.style.display = 'block';
+      });
+    } else if (action === 'delete') {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/board/comment/${commentId}/${action}`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          // 서버로부터 응답을 받은 후, 댓글 리스트를 다시 불러옴
+          if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const updatedCommentList = JSON.parse(xhr.responseText).comment;
+                
+                const commentListElement = document.getElementById('comment-list');
+                console.log(updatedCommentList)
+                commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+                for (let i = 0; i < updatedCommentList.length; i++) {
+                const comment = updatedCommentList[i];
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+                commentListElement.appendChild(commentElement);
+                }
+            }
+          
+        }
+      };
+      xhr.send(JSON.stringify({boardId: "<%= article.idx %>" }));
+    }
+  }
+});
+
+    //댓글 작성 이벤트 핸들러
+    document.querySelector("#comment-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const commentContent = formData.get("comment_content");
+        const boardId = formData.get("board_id");
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/board/comment/<%= article.idx %>");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = () => {
+            
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+            const comment = JSON.parse(xhr.responseText);
+            const commentList = document.querySelector("#comment-list");
+            const updatedCommentList = JSON.parse(xhr.responseText).comment;
+                
+            const commentListElement = document.getElementById('comment-list');
+            console.log(updatedCommentList)
+            commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+            for (let i = 0; i < updatedCommentList.length; i++) {
+            const comment = updatedCommentList[i];
+            const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+            commentListElement.appendChild(commentElement);
+            }
+            document.querySelector("#comment-form").reset();
+            }
+        };
+        const data = JSON.stringify({ comment_content: commentContent,boardId: "<%= article.idx %>"});
+        xhr.send(data);
+    });
+
+    function createCommentElement(comment,session) {
+  const commentElement = document.createElement('li');
+  commentElement.classList.add('comment');
+  commentElement.innerHTML = `
+    <p style="font-weight: bolder;">${comment.nickname}</p>
+    <div style="display: flex; justify-content: space-between; align-items: center;" data-comment-id="${comment.id}">
+      <p class="comment-content" style="margin: 0;">${comment.content}</p>
+      <div class="dropdown comment-actions dropdown-wrapper"> 
+        <img class="action-btn" src="/images/pngegg.png" style="width: 20px; height: 20px;" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+          ${session.user === comment.writer ? `
+            <button id="edit-comment-${comment.id}" class="dropdown-item" href="#">수정</button>
+            <button id="delete-comment-${comment.id}" class="dropdown-item" href="#">삭제</button>
+          ` : `
+            <a class="dropdown-item" href="#">신고</a>
+          `}
+        </ul>
+      </div>
+    </div>
+    <p style="font-size: smaller; color: #888;">${comment.created_at}</p>
+    <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);">
+  `;
+  return commentElement;
+}
+    
+
+    jQuery(document).ready(function() {
+        console.log("ready!"); // 이 줄이 실행되는지 확인해 보세요.
+        jQuery('#deleteButton').click(function() {
+            var result = confirm('게시글을 삭제하시겠습니까?');
+            if (result) {
+                jQuery.post('/board/delete/' + '<%= article.idx %>', function(data) {
+                alert('게시글이 삭제되었습니다.');
+                location.href = '/search_board';
                 });
-            });
+            }
         });
-
-        //댓글 작성 이벤트 핸들러
-        document.querySelector("#comment-form").addEventListener("submit", (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            const commentContent = formData.get("comment_content");
-            const boardId = formData.get("board_id");
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", "/board/comment/<%= article.idx %>");
-            xhr.setRequestHeader("Content-Type", "application/json");
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                const comment = JSON.parse(xhr.responseText);
-                const commentList = document.querySelector("#comment-list");
-                //댓글 목록에 새 댓글 추가
-                commentList.insertAdjacentHTML(
-                    "beforeend",
-                    `<li>
-                    <p>${comment.writer}</p>
-                    <p>${comment.content}</p>
-                    </li>`
-                );
-                document.querySelector("#comment-form").reset();
-                }
-            };
-            const data = JSON.stringify({ comment_content: commentContent });
-            xhr.send(data);
-        });
-
-
-        jQuery(document).ready(function() {
-            console.log("ready!"); // 이 줄이 실행되는지 확인해 보세요.
-            jQuery('#deleteButton').click(function() {
-                var result = confirm('게시글을 삭제하시겠습니까?');
-                if (result) {
-                    jQuery.post('/board/delete/' + '<%= article.idx %>', function(data) {
-                    alert('게시글이 삭제되었습니다.');
-                    location.href = '/search_board';
-                    });
-                }
-            });
-        });
-    </script>
+    });
+</script>
 <%- include('../layouts/footer') -%>

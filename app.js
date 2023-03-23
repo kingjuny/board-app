@@ -121,7 +121,7 @@ app.get('/board/read/:id',requireLogin, (req, res, next) => {
           console.log('views updated for article with id: ', article.idx);
       });
       //댓글 조회
-      connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ?', [req.params.id], (err, results) => {
+      connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.params.id], (err, results) => {
         if (err) throw err;
         
         res.render('pages/readBoard',{ session : req.session , article : article ,comment : results });
@@ -187,14 +187,56 @@ app.post("/board/comment/:id", (req, res, next) => {
       if (err) throw err;
       else {  
         console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
-        const comment = {
-          writer: req.session.user,
-          content: req.body.comment_content,
-        };
-        res.status(200).json(comment);
+        //댓글 조회
+        connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+          if (err) throw err;
+          
+          res.send({ session : req.session ,comment : results });
+        });
       }
     }
   );
+});
+
+//게시판 댓글 수정,삭제
+app.post("/board/comment/:id/:action", (req, res, next) => {
+  if(req.params.action==="edit"){ 
+    console.log(req.body.boardId)
+    const updatedContent = req.body.content;
+    connection.query("UPDATE comment SET content = ? WHERE id = ?;",[updatedContent, req.params.id],(err, rows, fileds) => { 
+        if (err) throw err;
+        else {  
+          console.log(`${req.params.id}번 댓글 수정`);
+          //댓글 조회
+          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+            if (err) throw err;
+            
+            res.send({ session : req.session ,comment : results });
+          });
+         
+        }
+      });
+  }
+  else{
+    console.log(req.params.action)
+    connection.query(
+      "DELETE FROM comment WHERE id = ?;",
+      [req.params.id],
+      (err, rows, fileds) => { 
+        if (err) throw err;
+        else {  
+          console.log(`${req.params.id}번 댓글 삭제`);
+          
+          //댓글 조회
+          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+            if (err) throw err;
+            
+            res.send({ session : req.session ,comment : results });
+          });
+        }
+      }
+    );
+  }
 });
 
 
@@ -326,9 +368,7 @@ app.get("/mypage",requireLogin, (req, res) => {
   })
 })
   
-app.get("/stock_news", (req, res) => {
-res.render("pages/stock_news")
-})
+
 
 app.get("/ranking", (req, res) => {
 res.render("pages/ranking")
