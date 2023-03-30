@@ -1,9 +1,21 @@
 <%- include('../layouts/header') -%>
-<% const insertTime = new Date(article.insert_time);
-const year = insertTime.getFullYear();
-const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
-const date = insertTime.getDate();
-const formattedDate = `${year}년 ${month}월 ${date}일`; %>
+<%  function formatDateTime(dateTimeString) {
+  const insertTime = new Date(dateTimeString);
+  const year = insertTime.getFullYear();
+  const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+  const date = insertTime.getDate();
+  const hours = insertTime.getHours();
+  const minutes = insertTime.getMinutes();
+  
+  // 날짜와 시간을 문자열로 변환합니다.
+  const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+  const formattedTime = `${hours < 10 ? '0' + hours : hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+  
+  // 날짜와 시간을 결합한 문자열을 반환합니다.
+  return `${formattedDate} ${formattedTime}`;
+}
+
+%>
     <style>
         .board {
             border: 1px solid lightgray;
@@ -30,17 +42,21 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
             <h6 id='nickname'><%= article.nickname %></h6>
         </div>
         <div class="d-flex align-items-center">
+            
             <button type="button" class="btn btn-outline-danger btn-like" article-id="<%= article.idx %>">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
                 </svg>
                 <span class="count"><%= article.likes_cnt %></span>
             </button>
+            
         </div>
     </div>
     <div style="display: flex; align-items: center;">
-        <a id='insert_time' style="font-size: smaller; color: #888; padding-right: 10px;"><%= formattedDate %></a>
-        <a id='view_cnt' style="font-size: smaller; color: #888;"><%= '조회 ' + article.view_cnt %></a>
+        <a id='insert_time' style="font-size: smaller; color: #888; padding-right: 10px;"><%= formatDateTime(article.insert_time) %></a>
+        <a id='view_cnt' style="font-size: smaller; color: #888; padding-right: 10px;"><%= '조회 ' + article.view_cnt %></a>
+        <img src="/images/comment.png" style="width: 20px; height: 20px; color: #888;" >
+        <a style="font-size: smaller; color: #888;">댓글 <%= comment.length %>개 </a>
     </div>
     
     
@@ -69,8 +85,13 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
         <button type="button" id="updateButton" class="btn btn-primary" onclick="location.href='/board/update/<%= article.idx %>'">수정하기</button> 
         <button type="button" id="deleteButton" class="btn btn-danger">삭제하기</button>
     <% } %>
+   
     <div class="comment-section" style="margin-top: 10px;">
-        <h3>댓글</h3>
+        <div style="display: flex; align-items: center;">
+            <h3 style="padding-right: 5px;">댓글</h3><h6 style="font-weight: bolder;"><%= comment.length %>개</h6>
+        </div>
+       
+
         <ul id="comment-list" >
             <% for (let i = 0; i < comment.length; i++) { %>
                 <li class="comment" >
@@ -91,19 +112,50 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
                         </div>
                         
                     </div>
-                    <p style="font-size: smaller; color: #888;"><%= comment[i].created_at %></p>
+                    <div style="display: flex; align-items: center;" >
+                        <p style="font-size: smaller; color: #888; padding-right: 10px;" id="comment-<%= comment[i].id %>-day"><%= formatDateTime(comment[i].created_at) %></p>
+                        <p class="write_reply" style="font-size: smaller; color: #888;" role="button" id="addreply-comment-<%= comment[i].id %>">답글 쓰기</p>
+                    </div>
+                    <ul class="reply_list">
+                      <% for (let j = 0; j < reply.length; j++) { %>
+                        <% if(comment[i].id===reply[j].comment_id){ %>
+                        <li class="reply" >
+                          <hr style="border: none; border-top: 1px solid rgb(131, 130, 130); ">
+                          <p style="font-weight: bolder;"><%= reply[j].nickname %></p>
+                          <div style="display: flex; justify-content: space-between; align-items: center;" data-reply-id="<%= reply[j].id %>">
+                              <p class="reply-content" style="margin: 0;"><%= reply[j].content %></p>
+                              
+                              <div class="dropdown reply-actions dropdown-wrapper"> 
+                                  <img class = "action-btn"src="/images/pngegg.png" style="width: 20px; height: 20px; " data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                                  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                                      <% if(session.user===reply[j].writer) { %>
+                                          <button id="editreply-reply-<%= reply[j].id %>" class="dropdown-item" href="#" >수정</button>
+                                          <button id="deletereply-reply-<%= reply[j].id %>" class="dropdown-item"href="#">삭제</button>  
+                                      <% } else { %>
+                                          <a class="dropdown-item"  href="#">신고</a>
+                                      <% } %>
+                                  </ul>
+                              </div>
+                          </div>
+                          <p style="font-size: smaller; color: #888; padding-right: 10px;" id="reply-<%= reply[j].id %>-day"><%= formatDateTime(reply[j].created_at) %></p>
+                        </li>
+                        <% } %>
+                      <% } %>
+                    </ul>
+                    
                 </li>
                 <hr style="border: none; border-top: 1px solid rgb(131, 130, 130); ">
+               
             <% } %>
         </ul>
-        
         <form id="comment-form" >
-          <div class="form-group">
-            <label for="comment-content">댓글 쓰기</label>
-            <textarea class="form-control" name="comment_content" rows="3"></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary">등록</button>
+            <div class="form-group">
+              <label for="comment-content">댓글 쓰기</label>
+              <textarea class="form-control" name="comment_content" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">등록</button>
         </form>
+       
     </div>
       
 </div>
@@ -129,12 +181,13 @@ const formattedDate = `${year}년 ${month}월 ${date}일`; %>
    // 이벤트 위임 방식으로 수정, 삭제 버튼에 클릭 이벤트 등록
 document.querySelector('#comment-list').addEventListener('click', (event) => {
   const target = event.target;
-  if (target.tagName === 'BUTTON') {
+ 
     const id = target.id;
     const tokens = id.split('-');
  
     const action = tokens[0]; // 'edit' 또는 'delete'
-    const commentId = tokens[2]; // 댓글 인덱스
+    const commentId = tokens[2]; // 댓글,대댓글 인덱스 
+    //**********************************************************댓글 수정 이벤트 핸들러**********************************************************
     if (action === 'edit') {
         console.log(1)
       const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`).parentElement;
@@ -173,13 +226,13 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
         xhr.onreadystatechange = () => {
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const updatedCommentList = JSON.parse(xhr.responseText).comment;
-                
-                const commentListElement = document.getElementById('comment-list');
+                const reply = JSON.parse(xhr.responseText).reply
                 console.log(updatedCommentList)
+                const commentListElement = document.getElementById('comment-list');
                 commentListElement.innerHTML = ''; // 댓글 리스트 초기화
                 for (let i = 0; i < updatedCommentList.length; i++) {
                 const comment = updatedCommentList[i];
-                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
                 commentListElement.appendChild(commentElement);
                 }
             }
@@ -195,6 +248,7 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
         // 이미지 버튼 다시 보이게 하기
         imageBtn.style.display = 'block';
       });
+      //**********************************************************댓글 삭제 이벤트 핸들러**********************************************************
     } else if (action === 'delete') {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `/board/comment/${commentId}/${action}`);
@@ -204,14 +258,16 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
           // 서버로부터 응답을 받은 후, 댓글 리스트를 다시 불러옴
           if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                 const updatedCommentList = JSON.parse(xhr.responseText).comment;
-                
+                const reply = JSON.parse(xhr.responseText).reply
                 const commentListElement = document.getElementById('comment-list');
+                console.log(12)
                 console.log(updatedCommentList)
                 commentListElement.innerHTML = ''; // 댓글 리스트 초기화
                 for (let i = 0; i < updatedCommentList.length; i++) {
                 const comment = updatedCommentList[i];
-                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
                 commentListElement.appendChild(commentElement);
+                
                 }
             }
           
@@ -219,10 +275,155 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
       };
       xhr.send(JSON.stringify({boardId: "<%= article.idx %>" }));
     }
-  }
-});
+    // *************************************************************대댓글 작성 이벤트 핸들러*******************************************************
+ else if(action==='addreply') {
+  
+  console.log(6974)
+  console.log(commentId)
+  // 저장 버튼 생성
+  const saveBtn = document.createElement('button');
+  saveBtn.classList.add('btn', 'btn-primary', 'save-reply-btn');
+  saveBtn.textContent = '저장';
+  // 취소 버튼 생성
+  const cancelBtn = document.createElement('button');
+  cancelBtn.classList.add('btn', 'btn-secondary', 'cancel-reply-btn');
+  cancelBtn.textContent = '취소';
+  // 대댓글 폼 생성
+  const replyForm = document.createElement('form');
+  replyForm.classList.add('reply-form');
+  replyForm.innerHTML = `
+    <textarea name="reply_content" class="form-control" rows="3" placeholder="대댓글 내용을 입력하세요"></textarea>
+  `;
+  // 저장 버튼과 취소 버튼, 대댓글 폼을 추가
+  const replyList = event.target.closest('.comment').querySelector('.reply_list');
+  replyList.append(replyForm, saveBtn, cancelBtn);
 
-    //댓글 작성 이벤트 핸들러
+  // 대댓글 저장 버튼 클릭 이벤트 핸들러
+  saveBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    const replyContent = replyForm.querySelector('[name="reply_content"]').value;
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/board/reply/${commentId}`);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+        const updatedCommentList = JSON.parse(xhr.responseText).comment;
+                const reply = JSON.parse(xhr.responseText).reply
+                const commentListElement = document.getElementById('comment-list');
+                console.log(12)
+                console.log(updatedCommentList)
+                commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+                for (let i = 0; i < updatedCommentList.length; i++) {
+                const comment = updatedCommentList[i];
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
+                commentListElement.appendChild(commentElement);
+              }
+      }
+    };
+    const data = JSON.stringify({ replyContent: replyContent ,boardId: "<%= article.idx %>" });
+    xhr.send(data);
+  });
+
+  // 대댓글 취소 버튼 클릭 이벤트 핸들러
+  cancelBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    replyForm.remove();
+    saveBtn.remove();
+    cancelBtn.remove();
+  });
+};
+//************************************************************대댓글 수정 이벤트 핸들러*****************************************************************
+if (action === 'editreply') {
+        console.log('대댓글 수정 이벤트 핸들러')
+      const replyElement = document.querySelector(`[data-reply-id="${commentId}"]`).parentElement;
+      
+      const replyContentElement = replyElement.querySelector('.reply-content');
+      
+      const replyContent = replyContentElement.textContent.trim();
+      
+      // 대댓글 내용을 input 요소로 변경
+      replyContentElement.innerHTML = `<input type="text" value="${replyContent}" class="form-control" name="edit_reply">`;
+      // 저장 버튼 생성
+      const saveBtn = document.createElement('button');
+      saveBtn.classList.add('btn', 'btn-primary', 'save-reply-btn');
+      saveBtn.textContent = '저장';
+      // 취소 버튼 생성
+      const cancelBtn = document.createElement('button');
+      cancelBtn.classList.add('btn', 'btn-secondary', 'cancel-reply-btn');
+      cancelBtn.textContent = '취소';
+      // 이미지 버튼 숨기기
+        const actionsWrapper = replyElement.querySelector('.reply-actions');
+        const imageBtn = actionsWrapper.querySelector('.action-btn');
+        imageBtn.style.display = 'none';
+        // 저장 버튼과 취소 버튼을 추가
+      replyElement.querySelector('.reply-actions').append(saveBtn, cancelBtn);
+
+      // 저장 버튼 클릭 이벤트 핸들러 등록
+      saveBtn.addEventListener('click', () => {
+        const updatedreplyContent = replyElement.querySelector('[name="edit_reply"]').value;
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/board/reply/${commentId}/${action}`);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+      
+        
+        
+        // 대댓글 수정 성공 시, 서버로부터 업데이트된 댓글 리스트를 받아와서 렌더링
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                const updatedCommentList = JSON.parse(xhr.responseText).comment;
+                const reply = JSON.parse(xhr.responseText).reply
+                console.log(updatedCommentList)
+                const commentListElement = document.getElementById('comment-list');
+                commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+                for (let i = 0; i < updatedCommentList.length; i++) {
+                const comment = updatedCommentList[i];
+                const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
+                commentListElement.appendChild(commentElement);
+                }
+            }
+        };
+        xhr.send(JSON.stringify({ content: updatedreplyContent ,boardId: "<%= article.idx %>" }));
+      });
+
+      // 취소 버튼 클릭 이벤트 핸들러 등록
+      cancelBtn.addEventListener('click', () => {
+        replyContentElement.textContent = replyContent;
+        saveBtn.remove();
+        cancelBtn.remove();
+        // 이미지 버튼 다시 보이게 하기
+        imageBtn.style.display = 'block';
+      });
+      //**********************************************************대댓글 삭제 이벤트 핸들러**********************************************************
+    } else if (action === 'deletereply') {
+      console.log('대댓글 삭제 이벤트 핸들러')
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/board/reply/${commentId}/${action}`);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = () => {
+       
+        // 서버로부터 응답을 받은 후, 댓글 리스트를 다시 불러옴
+        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+          const updatedCommentList = JSON.parse(xhr.responseText).comment;
+          const reply = JSON.parse(xhr.responseText).reply
+          const commentListElement = document.getElementById('comment-list');
+          console.log(12)
+          console.log(updatedCommentList)
+          commentListElement.innerHTML = ''; // 댓글 리스트 초기화
+          for (let i = 0; i < updatedCommentList.length; i++) {
+          const comment = updatedCommentList[i];
+          const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
+          commentListElement.appendChild(commentElement);
+          
+          }
+        }
+          
+      };
+      xhr.send(JSON.stringify({boardId: "<%= article.idx %>" }));
+    }
+ 
+});
+    //********************************************************************댓글 작성 이벤트 핸들러*********************************************
     document.querySelector("#comment-form").addEventListener("submit", (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -234,16 +435,15 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
         xhr.onreadystatechange = () => {
             
             if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-            const comment = JSON.parse(xhr.responseText);
             const commentList = document.querySelector("#comment-list");
             const updatedCommentList = JSON.parse(xhr.responseText).comment;
-                
+            const reply = JSON.parse(xhr.responseText).reply//////////////
             const commentListElement = document.getElementById('comment-list');
             console.log(updatedCommentList)
             commentListElement.innerHTML = ''; // 댓글 리스트 초기화
             for (let i = 0; i < updatedCommentList.length; i++) {
             const comment = updatedCommentList[i];
-            const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session);//댓글 리스트 새로 고침 함수에 변수 전달
+            const commentElement = createCommentElement(comment,JSON.parse(xhr.responseText).session,reply);//댓글 리스트 새로 고침 함수에 변수 전달
             commentListElement.appendChild(commentElement);
             }
             document.querySelector("#comment-form").reset();
@@ -253,9 +453,9 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
         xhr.send(data);
     });
 
-    function createCommentElement(comment,session) {
-  const commentElement = document.createElement('li');
-  commentElement.classList.add('comment');
+    function createCommentElement(comment, session, reply) {
+  const commentElement = document.createElement("li");
+  commentElement.classList.add("comment");
   commentElement.innerHTML = `
     <p style="font-weight: bolder;">${comment.nickname}</p>
     <div style="display: flex; justify-content: space-between; align-items: center;" data-comment-id="${comment.id}">
@@ -272,11 +472,47 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
         </ul>
       </div>
     </div>
-    <p style="font-size: smaller; color: #888;">${comment.created_at}</p>
+    <div style="display: flex; align-items: center;" >
+      <p style="font-size: smaller; color: #888; padding-right: 10px;" id="comment-${comment.id}-day">${formatDateTime(comment.created_at)}</p>
+      <p class="write_reply" style="font-size: smaller; color: #888;" role="button" id="addreply-comment-${comment.id}">답글 쓰기</p>
+    </div>
+    <ul class="reply_list">
+      ${reply
+        .filter((replyItem) => comment.id === replyItem.comment_id)
+        .map((replyItem) => {
+          return `
+            <li class="reply">
+              <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);">
+              <p style="font-weight: bolder;">${replyItem.nickname}</p>
+              <div style="display: flex; justify-content: space-between; align-items: center;" data-reply-id="${replyItem.id}">
+                <p class="reply-content" style="margin: 0;">${replyItem.content}</p>
+                <div class="dropdown reply-actions dropdown-wrapper"> 
+                  <img class="action-btn" src="/images/pngegg.png" style="width: 20px; height: 20px;" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                  <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                    ${session.user === replyItem.writer ? `
+                      <button id="editreply-reply-${replyItem.id}" class="dropdown-item" href="#">수정</button>
+                      <button id="deletereply-reply-${replyItem.id}" class="dropdown-item" href="#">삭제</button>
+                    ` : `
+                      <a class="dropdown-item" href="#">신고</a>
+                    `}
+                  </ul>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center;">
+                <p style="font-size: smaller; color: #888; padding-right: 10px;" id="reply-${replyItem.id}-day">${formatDateTime(replyItem.created_at)}</p>
+              </div>
+            </li>
+          `;
+        })
+        .join("")}
+      
+    </ul>
     <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);">
   `;
   return commentElement;
 }
+
+
     
 
     jQuery(document).ready(function() {
@@ -291,5 +527,23 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
             }
         });
     });
+
+  
+  function formatDateTime(dateTimeString) {
+  const insertTime = new Date(dateTimeString);
+  const year = insertTime.getFullYear();
+  const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+  const date = insertTime.getDate();
+  const hours = insertTime.getHours();
+  const minutes = insertTime.getMinutes();
+  
+  // 날짜와 시간을 문자열로 변환합니다.
+  const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+  const formattedTime = `${hours < 10 ? '0' + hours : hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+  
+  // 날짜와 시간을 결합한 문자열을 반환합니다.
+  return `${formattedDate} ${formattedTime}`;
+}
+
 </script>
 <%- include('../layouts/footer') -%>
