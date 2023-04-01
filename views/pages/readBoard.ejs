@@ -67,12 +67,13 @@
         
         <div class="iput-group mb-3">
             <div><%= article.content %></div>
-            <% if(article.image_path) { %>
+            <% if (article.image_path && article.image_path !== 'null') { %>
               <% const images = JSON.parse(article.image_path); %>
               <% images.forEach(function(image) { %>
                 <img src="<%= image %>" alt="이미지" style="width:auto;height:auto;" />
               <% }); %>
             <% } %>
+            
         </div>
 
     </div>

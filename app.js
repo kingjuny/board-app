@@ -70,15 +70,53 @@ app.get("/",requireLogin, (req, res) => {
     res.render("pages/home") 
   });
 
+//게시물 전체조회
+const ITEMS_PER_PAGE = 15;
+// app.get("/search_board",requireLogin, (req, res) => {
+  //   connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', function(error, results, fields) {
+  //     if (error) throw error;
+  //     else{
+  //       res.render("pages/search_board",{results: results})
+  //     }
+  //   })
+  // })
+app.get("/search_board", requireLogin, (req, res) => {
+  let page = req.query.page || 1;
+  let offset = (page - 1) * ITEMS_PER_PAGE;
+  
+  connection.query(
+    "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id LIMIT ?, ?",
+    [offset, ITEMS_PER_PAGE],
+    function (error, results, fields) {
+      if (error) throw error;
+      else {
+        connection.query(
+          "SELECT COUNT(*) AS count FROM board",
+          function (error, countResult, fields) {
+            if (error) throw error;
+            else {
+              let totalItems = countResult[0].count;
+              let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+              let pageRange = [];
 
-app.get("/search_board",requireLogin, (req, res) => {
-  connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', function(error, results, fields) {
-    if (error) throw error;
-    else{
-      res.render("pages/search_board",{results: results})
+              for (let i = 1; i <= totalPages; i++) {
+                pageRange.push(i);
+              }
+
+              res.render("pages/search_board", {
+                results: results,
+                currentPage: page,
+                pageRange: pageRange,
+                totalPages: totalPages,
+              });
+            }
+          }
+        );
+      }
     }
-  })
-})
+  );
+});
+
 
 app.get("/board/write",requireLogin,(req,res) => {
   
