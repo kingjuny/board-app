@@ -116,6 +116,46 @@ app.get("/search_board", requireLogin, (req, res) => {
     }
   );
 });
+//게시물 검색
+app.get('/board/search', function(req, res) {
+  const q = req.query.search_board;
+  let page = req.query.page || 1;
+  let offset = (page - 1) * ITEMS_PER_PAGE;
+
+  var query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? LIMIT ?, ?";
+  var values = ["%" + q + "%", "%" + q + "%", offset, ITEMS_PER_PAGE];
+
+  connection.query(query, values, function(error, results, fields) {
+    if (error) throw error;
+    else {
+      connection.query(
+        "SELECT COUNT(*) AS count FROM board WHERE title LIKE ? OR content LIKE ?",
+        ["%" + q + "%", "%" + q + "%"],
+        function (error, countResult, fields) {
+          if (error) throw error;
+          else {
+            let totalItems = countResult[0].count;
+            let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            let pageRange = [];
+
+            for (let i = 1; i <= totalPages; i++) {
+              pageRange.push(i);
+            }
+
+            res.render('pages/search_board', {
+              results: results,
+              currentPage: page,
+              pageRange: pageRange,
+              totalPages: totalPages
+            });
+          }
+        }
+      );
+    }
+  });
+});
+
+
 
 
 app.get("/board/write",requireLogin,(req,res) => {
