@@ -1,3 +1,22 @@
+<%  function formatDateTime(dateTimeString) {
+  const insertTime = new Date(dateTimeString);
+  const year = insertTime.getFullYear();
+  const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+  const date = insertTime.getDate();
+  const hours = insertTime.getHours();
+  const minutes = insertTime.getMinutes();
+  
+  // 날짜와 시간을 문자열로 변환합니다.
+  const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+ 
+  
+  // 날짜와 시간을 결합한 문자열을 반환합니다.
+  return `${formattedDate}`;
+}
+
+%>
+<h2>좋아하는 게시물</h2>
+<hr style="border: none; border-top: 2px solid rgb(131, 130, 130); margin-bottom: 10px ; ">
 <table class="table">
     <thead>
       <tr>
@@ -18,7 +37,7 @@
           </td>
           <td><a href="/board/read/<%= likes[i].idx %>"><%= likes[i].title %></a></td>
           <td><%= likes[i].nickname %></td>
-          <td><%= likes[i].created_at %></td>
+          <td><%= formatDateTime(likes[i].created_at) %></td>
         </tr>
       <% } %>
     </tbody>

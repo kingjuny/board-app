@@ -29,6 +29,17 @@
         .dropdown-wrapper.show-menu img {
         display: none;
         }
+      .profile-img{
+        object-fit: cover;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+
+      }
+      ul {
+        list-style-type: none;
+      }
+
     </style>
 
 
@@ -38,8 +49,15 @@
         <h2 id='title'><%= article.title %></h2>
     </div>
     <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <h6 id='nickname'><%= article.nickname %></h6>
+        <div class="d-flex align-items-center">
+          
+          <% if (article.profile_image_url) { %>
+            <img src="<%= article.profile_image_url %>" alt="프로필 사진" class="profile-img">
+          <% } else { %>
+              <img src="/profile/profile_emoticon/basicprofile.jpg" alt="기본 프로필 사진" class="profile-img">
+          <% } %>
+          
+          <h6 id='nickname' style="margin-top: 5px; margin-left: 5px;font-weight: bolder;"><%= article.nickname %></h6>
         </div>
         <div class="d-flex align-items-center">
             
@@ -94,9 +112,17 @@
        
 
         <ul id="comment-list" >
+          
             <% for (let i = 0; i < comment.length; i++) { %>
                 <li class="comment" >
-                    <p style="font-weight: bolder;"><%= comment[i].nickname %></p>
+                  <div class="d-flex align-items-center" >
+                    <% if (comment[i].profile_image_url) { %>
+                      <img src="<%= comment[i].profile_image_url %>" alt="프로필 사진" class="profile-img">
+                    <% } else { %>
+                        <img src="/profile/profile_emoticon/basicprofile.jpg" alt="기본 프로필 사진" class="profile-img">
+                    <% } %>
+                      <p style="font-weight: bolder; margin-top: 10px; margin-left: 5px;"><%= comment[i].nickname %></p>
+                  </div>
                     <div style="display: flex; justify-content: space-between; align-items: center;" data-comment-id="<%= comment[i].id %>">
                         <p class="comment-content" style="margin: 0;"><%= comment[i].content %></p>
                         
@@ -122,7 +148,14 @@
                         <% if(comment[i].id===reply[j].comment_id){ %>
                         <li class="reply" >
                           <hr style="border: none; border-top: 1px solid rgb(131, 130, 130); ">
-                          <p style="font-weight: bolder;"><%= reply[j].nickname %></p>
+                          <div class="d-flex align-items-center" >
+                            <% if (reply[j].profile_image_url) { %>
+                              <img src="<%= reply[j].profile_image_url %>" alt="프로필 사진" class="profile-img">
+                            <% } else { %>
+                                <img src="/profile/profile_emoticon/basicprofile.jpg" alt="기본 프로필 사진" class="profile-img">
+                            <% } %>
+                          <p style="font-weight: bolder; margin-top: 10px; margin-left: 5px;"><%= reply[j].nickname %></p>
+                          </div>
                           <div style="display: flex; justify-content: space-between; align-items: center;" data-reply-id="<%= reply[j].id %>">
                               <p class="reply-content" style="margin: 0;"><%= reply[j].content %></p>
                               
@@ -458,7 +491,15 @@ if (action === 'editreply') {
   const commentElement = document.createElement("li");
   commentElement.classList.add("comment");
   commentElement.innerHTML = `
-    <p style="font-weight: bolder;">${comment.nickname}</p>
+
+    <div class="d-flex align-items-center" >
+      ${comment.profile_image_url ? `
+        <img src="${comment.profile_image_url}" alt="프로필 사진" class="profile-img">
+      ` : `
+      <img src="/profile/profile_emoticon/basicprofile.jpg" alt="기본 프로필 사진" class="profile-img">
+      `}
+      <p style="font-weight: bolder; margin-top: 10px; margin-left: 5px;">${comment.nickname}</p>
+    </div>
     <div style="display: flex; justify-content: space-between; align-items: center;" data-comment-id="${comment.id}">
       <p class="comment-content" style="margin: 0;">${comment.content}</p>
       <div class="dropdown comment-actions dropdown-wrapper"> 
@@ -484,7 +525,14 @@ if (action === 'editreply') {
           return `
             <li class="reply">
               <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);">
-              <p style="font-weight: bolder;">${replyItem.nickname}</p>
+              <div class="d-flex align-items-center" >
+                ${replyItem.profile_image_url ? `
+                  <img src="${replyItem.profile_image_url}" alt="프로필 사진" class="profile-img">
+                ` : `
+                <img src="/profile/profile_emoticon/basicprofile.jpg" alt="기본 프로필 사진" class="profile-img">
+                `}
+                <p style="font-weight: bolder; margin-top: 10px; margin-left: 5px;">${replyItem.nickname}</p>
+              </div>
               <div style="display: flex; justify-content: space-between; align-items: center;" data-reply-id="${replyItem.id}">
                 <p class="reply-content" style="margin: 0;">${replyItem.content}</p>
                 <div class="dropdown reply-actions dropdown-wrapper"> 

@@ -1,5 +1,6 @@
 const express = require("express");
 const mysql = require("mysql");
+const fs = require('fs');
 const session = require("express-session");
 const mySQLstore = require("express-mysql-session")(session);
 const crypto = require("crypto");
@@ -39,6 +40,17 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
+// 프로필 변경 multer 미들웨어 설정
+const profileStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, 'public/profile'); // 프로필 이미지 파일 저장 경로 설정
+  },
+  filename: function (req, file, cb) {
+      const ext = path.extname(file.originalname); // 파일 확장자 추출
+      cb(null, `${Date.now()}${ext}`); // 파일 이름 설정 (현재 시간 + 확장자)
+  }
+});
+const uploadProfileImage = multer({ storage: profileStorage });
 app.use(express.static('public')); //public 디렉토리를 정적 파일 제공을 위한 디렉토리로 설정
 //세션 미들웨어
 app.use(session({ 
@@ -69,7 +81,7 @@ app.get("/",requireLogin, (req, res) => {
   
     res.render("pages/home") 
   });
-
+ 
 //게시물 전체조회
 const ITEMS_PER_PAGE = 15;
 // app.get("/search_board",requireLogin, (req, res) => {
@@ -122,8 +134,8 @@ app.get('/board/search', function(req, res) {
   let page = req.query.page || 1;
   let offset = (page - 1) * ITEMS_PER_PAGE;
 
-  var query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? LIMIT ?, ?";
-  var values = ["%" + q + "%", "%" + q + "%", offset, ITEMS_PER_PAGE];
+  var query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? OR u.nickname LIKE ? LIMIT ?, ?";
+  var values = ["%" + q + "%", "%" + q + "%", "%" + q + "%",offset, ITEMS_PER_PAGE];
 
   connection.query(query, values, function(error, results, fields) {
     if (error) throw error;
@@ -142,7 +154,7 @@ app.get('/board/search', function(req, res) {
               pageRange.push(i);
             }
 
-            res.render('pages/search_board', {
+            res.render('pages/search_results', {
               results: results,
               currentPage: page,
               pageRange: pageRange,
@@ -182,12 +194,29 @@ app.post('/board/write', express.json(), upload.array('images[]'), (req, res) =>
     } 
   }) 
 });
+//프로필 이미지 변경
+app.post('/profile', uploadProfileImage.single('profile-image'), (req, res) => {
+  const file = req.file; // 업로드한 파일 정보
+  const userId = req.session.user; // 사용자 아이디
+  const previousProfileImagePath = req.body.profile_image_url; // 이전 프로필 이미지 경로
 
+  const profileImagePath = file ? `/profile/${file.filename}` : null; // 프로필 사진 파일 경로
+ // 프로필 사진 파일 경로
+  console.log(previousProfileImagePath)
+  // MySQL 데이터베이스에서 사용자 정보 업데이트
+  const sql = 'UPDATE users SET profile_image_url = ? WHERE id = ?';
+  connection.query(sql, [profileImagePath, userId], (error, results, fields) => {
+    if (error) throw error;
+    
+    // 업데이트 성공 시
+    res.redirect('/mypage');
+  });
+});
  
 
 //글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
 app.get('/board/read/:id',requireLogin, (req, res, next) => { 
-  connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', (err, rows) => {
+  connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM board b INNER JOIN users u ON b.writer = u.id;', (err, rows) => {
       if (err) throw err;
       const article = rows.find(art => art.idx === parseInt(req.params.id));
       if(!article) {
@@ -199,10 +228,10 @@ app.get('/board/read/:id',requireLogin, (req, res, next) => {
           console.log('views updated for article with id: ', article.idx);
       });
       //댓글 조회
-      connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.params.id], (err, comments) => {
+      connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.params.id], (err, comments) => {
         if (err) throw err;
       
-        connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.params.id], (err, replies) => {
+        connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.params.id], (err, replies) => {
           if (err) throw err;
           
           res.render('pages/readBoard', { session: req.session, article: article, comment: comments, reply: replies });
@@ -271,9 +300,9 @@ app.post("/board/comment/:id", (req, res, next) => {
       else {  
         console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
         //댓글 조회
-        connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+        connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
           if (err) throw err;
-          connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+          connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
             if (err) throw err;
             
             res.send({ session : req.session ,comment : results, reply: replies });
@@ -294,9 +323,9 @@ app.post("/board/comment/:id/:action", (req, res, next) => {
         else {  
           console.log(`${req.params.id}번 댓글 수정`);
           //댓글 조회
-          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
             if (err) throw err;
-            connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
               if (err) throw err;
               
               res.send({ session : req.session ,comment : results, reply: replies });
@@ -317,9 +346,9 @@ app.post("/board/comment/:id/:action", (req, res, next) => {
           console.log(`${req.params.id}번 댓글 삭제`);
           
           //댓글 조회
-          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
             if (err) throw err;
-            connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
               if (err) throw err;
               
               res.send({ session : req.session ,comment : results, reply: replies });
@@ -343,9 +372,9 @@ app.post("/board/reply/:id", (req, res, next) => {
       else {  
         console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
         //댓글 조회
-        connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+        connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
           if (err) throw err;
-          connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+          connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
             if (err) throw err;
             
             res.send({ session : req.session ,comment : results, reply: replies });
@@ -367,9 +396,9 @@ app.post("/board/reply/:id/:action", (req, res, next) => {
         else {  
           console.log(`${req.params.id}번 대댓글 수정`);
           //댓글,대댓글 조회
-          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
             if (err) throw err;
-            connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
               if (err) throw err;
               
               res.send({ session : req.session ,comment : results, reply: replies });
@@ -390,9 +419,9 @@ app.post("/board/reply/:id/:action", (req, res, next) => {
           console.log(`${req.params.id}번 대댓글 삭제`);
           
           //댓글,대댓글 조회
-          connection.query('SELECT b.*, u.nickname FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
+          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
             if (err) throw err;
-            connection.query('SELECT r.*, u.nickname FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
+            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
               if (err) throw err;
               
               res.send({ session : req.session ,comment : results, reply: replies });
@@ -532,6 +561,8 @@ app.get("/mypage",requireLogin, (req, res) => {
     
   })
 })
+
+
   
 
 

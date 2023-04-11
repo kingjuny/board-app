@@ -1,4 +1,17 @@
+<style>
+  .board {
+      
+      padding: 40px;
+      border-radius: 10px;
+      max-width: 1300px; 
+      min-width: 1000px;
+      
+      margin: auto;
+  }
+    
+</style>
 <%- include ('../layouts/header') -%>
+<div class="board ">
 <form method="post" action="/signin">
     <div class="row my-3 mx-5 mt-5">
         <label class="col-sm-2 col-form-label">Name</label>
@@ -44,6 +57,7 @@
     <input type="submit" class="btn btn-primary row my-3 mx-5" value="Sign up">
     
   </form>
+</div>
   <script>
     document.addEventListener('DOMContentLoaded', ()=> {
         const form = document.querySelector('form');
