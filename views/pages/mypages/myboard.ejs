@@ -61,12 +61,12 @@
             </svg>
             <%= results[i].likes_cnt %>
           </td>
-          <td><a href="/board/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
+          <td><a href="/post/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
           <td><%= formatDateTime(results[i].insert_time) %></td>
         </tr>
-      <% } %>
+      <% } %> 
     </tbody>
   </table>
 
-<button type="button" class="btn btn-info" onclick="location.href='/board/write'">글쓰기</button>
+<button type="button" class="btn btn-info" onclick="location.href='/post/write'">글쓰기</button>
 </div>

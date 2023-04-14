@@ -1,13 +1,7 @@
 const express = require("express");
-const mysql = require("mysql");
-const fs = require('fs');
 const session = require("express-session");
 const mySQLstore = require("express-mysql-session")(session);
-const crypto = require("crypto");
 const dbconfig = require("./config/dbconfig.json")//데이터베이스 정보
-//이미지 업로드
-const multer = require('multer'); 
-const path = require('path');
 const app = express();
 const port = 3000;
 
@@ -18,39 +12,8 @@ app.set('views','views');
 //뷰 템플릿 엔진 설정
 app.set("view engine", "ejs");
  
-// DB 커넥션 생성
-const connection = mysql.createConnection({
-  connectionLimit: 10,
-  host: dbconfig.host,
-  user: dbconfig.user, 
-  password: dbconfig.password, 
-  database: dbconfig.database,
-  debug:false
-});
-// DB 접속
-connection.connect();
-// multer 미들웨어 설정
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      cb(null, 'public/images'); // 이미지 파일 저장 경로 설정
-  },
-  filename: function (req, file, cb) {
-      const ext = path.extname(file.originalname); // 파일 확장자 추출
-      cb(null, `${Date.now()}${ext}`); // 파일 이름 설정 (현재 시간 + 확장자)
-  }
-});
-const upload = multer({ storage: storage });
-// 프로필 변경 multer 미들웨어 설정
-const profileStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      cb(null, 'public/profile'); // 프로필 이미지 파일 저장 경로 설정
-  },
-  filename: function (req, file, cb) {
-      const ext = path.extname(file.originalname); // 파일 확장자 추출
-      cb(null, `${Date.now()}${ext}`); // 파일 이름 설정 (현재 시간 + 확장자)
-  }
-});
-const uploadProfileImage = multer({ storage: profileStorage });
+
+
 app.use(express.static('public')); //public 디렉토리를 정적 파일 제공을 위한 디렉토리로 설정
 //세션 미들웨어
 app.use(session({ 
@@ -62,518 +25,67 @@ app.use(session({
 //로그인 후에 이용가능 미들웨어
 const requireLogin = (req, res, next) => {
   if (!req.session.user) {
-    res.redirect('/login');
+    if (req.path === '/login'|| req.path === '/signin' ) {
+      next();
+    } else {
+      res.redirect('/login');
+    }
   } else { 
     res.locals.logined = true;
     next();
   } 
 }; 
-//로그인 후 로그인,회원가입 클릭시  이용가능 미들웨어
+
+// 로그인 후 로그인, 회원가입 클릭시 이용 가능한 미들웨어
 const norequireLogin = (req, res, next) => {
-  if (req.session.user) { 
+  if (req.session.user && (req.path === '/login' || req.path === '/signin')) { 
     res.redirect('/');
   } else {
     next(); 
   } 
 };
- 
-app.get("/",requireLogin, (req, res) => {
+
+app.use(requireLogin);
+app.use(norequireLogin);
+
+app.use("/",require("./routes/home"))
   
-    res.render("pages/home") 
-  });
- 
-//게시물 전체조회
-const ITEMS_PER_PAGE = 15;
-// app.get("/search_board",requireLogin, (req, res) => {
-  //   connection.query('SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id', function(error, results, fields) {
-  //     if (error) throw error;
-  //     else{
-  //       res.render("pages/search_board",{results: results})
-  //     }
-  //   })
-  // })
-app.get("/search_board", requireLogin, (req, res) => {
-  let page = req.query.page || 1;
-  let offset = (page - 1) * ITEMS_PER_PAGE;
-  
-  connection.query(
-    "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id LIMIT ?, ?",
-    [offset, ITEMS_PER_PAGE],
-    function (error, results, fields) {
-      if (error) throw error;
-      else {
-        connection.query(
-          "SELECT COUNT(*) AS count FROM board",
-          function (error, countResult, fields) {
-            if (error) throw error;
-            else {
-              let totalItems = countResult[0].count;
-              let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-              let pageRange = [];
-
-              for (let i = 1; i <= totalPages; i++) {
-                pageRange.push(i);
-              }
-
-              res.render("pages/search_board", {
-                results: results,
-                currentPage: page,
-                pageRange: pageRange,
-                totalPages: totalPages,
-              });
-            }
-          }
-        );
-      }
-    }
-  );
-});
-//게시물 검색
-app.get('/board/search', function(req, res) {
-  const q = req.query.search_board;
-  let page = req.query.page || 1;
-  let offset = (page - 1) * ITEMS_PER_PAGE;
-
-  var query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? OR u.nickname LIKE ? LIMIT ?, ?";
-  var values = ["%" + q + "%", "%" + q + "%", "%" + q + "%",offset, ITEMS_PER_PAGE];
-
-  connection.query(query, values, function(error, results, fields) {
-    if (error) throw error;
-    else {
-      connection.query(
-        "SELECT COUNT(*) AS count FROM board WHERE title LIKE ? OR content LIKE ?",
-        ["%" + q + "%", "%" + q + "%"],
-        function (error, countResult, fields) {
-          if (error) throw error;
-          else {
-            let totalItems = countResult[0].count;
-            let totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-            let pageRange = [];
-
-            for (let i = 1; i <= totalPages; i++) {
-              pageRange.push(i);
-            }
-
-            res.render('pages/search_results', {
-              results: results,
-              currentPage: page,
-              pageRange: pageRange,
-              totalPages: totalPages
-            });
-          }
-        }
-      );
-    }
-  });
-});
 
 
+// 전체게시물,게시물검색
+app.use("/board",require("./routes/board"))
 
+//게시물
+app.use("/post",require("./routes/post"))
 
-app.get("/board/write",requireLogin,(req,res) => {
-  
-  console.log(req.session.id)
-  console.log(req.session.user)
-  res.render('pages/writeboard');
-  
-});         
-//게시판 글작성
-app.post('/board/write', express.json(), upload.array('images[]'), (req, res) => {
-  const sql = 'INSERT INTO board (title, writer, content, image_path) VALUES (?, ?, ?, ?);';
-  let images = null;
-  if (req.files && req.files.length > 0) {
-    images = req.files.map(file => `/images/${file.filename}`);
-  }  
-  const params = [req.body.title, req.session.user, req.body.content, JSON.stringify(images)];
-  
-  connection.query(sql, params, (err, rows, fields) => {
-    if (err) throw err;
-    else {   
-      console.log(rows.insertId, "번 게시글 등록");
-      res.redirect(`/board/read/${rows.insertId}`)
-    } 
-  }) 
-});
-//프로필 이미지 변경
-app.post('/profile', uploadProfileImage.single('profile-image'), (req, res) => {
-  const file = req.file; // 업로드한 파일 정보
-  const userId = req.session.user; // 사용자 아이디
-  const previousProfileImagePath = req.body.profile_image_url; // 이전 프로필 이미지 경로
+//게시판 댓글 
+app.use("/comment",require("./routes/comment"))
 
-  const profileImagePath = file ? `/profile/${file.filename}` : null; // 프로필 사진 파일 경로
- // 프로필 사진 파일 경로
-  console.log(previousProfileImagePath)
-  // MySQL 데이터베이스에서 사용자 정보 업데이트
-  const sql = 'UPDATE users SET profile_image_url = ? WHERE id = ?';
-  connection.query(sql, [profileImagePath, userId], (error, results, fields) => {
-    if (error) throw error;
-    
-    // 업데이트 성공 시
-    res.redirect('/mypage');
-  });
-});
- 
-
-//글 번호로 GET요청을 받았을 때 해당 번호에 맞는 글의 정보만을 보내는 코드
-app.get('/board/read/:id',requireLogin, (req, res, next) => { 
-  connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM board b INNER JOIN users u ON b.writer = u.id;', (err, rows) => {
-      if (err) throw err;
-      const article = rows.find(art => art.idx === parseInt(req.params.id));
-      if(!article) {
-      return res.status(404).send('ID was not found.');
-      }    
-      // 조회수 증가
-      connection.query('UPDATE board SET view_cnt = view_cnt + 1 WHERE idx = ?', [article.idx], (err, result) => {
-          if (err) throw err;
-          console.log('views updated for article with id: ', article.idx);
-      });
-      //댓글 조회
-      connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.params.id], (err, comments) => {
-        if (err) throw err;
-      
-        connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.params.id], (err, replies) => {
-          if (err) throw err;
-          
-          res.render('pages/readBoard', { session: req.session, article: article, comment: comments, reply: replies });
-        });
-      });
-      
-
-      
-  })
-})
-//글 수정 화면
-app.get('/board/update/:id',upload.array('images'), (req, res, next) => {
-  connection.query('SELECT * from board', (err, rows) => {
-    if (err) throw err;
-    const article = rows.find(art => art.idx === parseInt(req.params.id));
-    if(!article) {
-    return res.status(404).send('ID was not found.');
-    } 
-    else if(req.session.user!=article.writer){
-        res.redirect("/search_board"); 
-    }else{
-        res.render('pages/updateBoard',{article : article});
-    }
-  })
-})
-
-app.post('/board/update/:id', express.json(), (req, res, next) => {
-  connection.query('SELECT * from board', (err, rows, fildes) => { 
-    if (err) throw err;
-    const article = rows.find(art => art.idx === parseInt(req.params.id));
-    if(!article) {
-      return res.status(404).send('ID was not found.');
-    } 
-    console.log(req.body)
-    const sql = 'UPDATE board SET title = ?, writer = ?, content = ? WHERE idx = ?';
-    const params = [req.body.title, req.session.user, req.body.content, req.params.id];
-    console.log(params)
-    connection.query(sql, params, (err, rows, fileds) => {
-      if (err) throw err;
-      console.log(rows);
-    })
-    // 데이터를 URL 쿼리 문자열로 전달
-    res.redirect(`/board/read/${req.params.id}`) 
-  })
-})
-
-//게시판 글삭제
-app.post('/board/delete/:id', (req, res, next) => {
-  connection.query('DELETE FROM board WHERE idx = ?', [req.params.id], (err, rows, fileds) => {
-    if (err) throw err;
-    res.send('게시글이 삭제되었습니다.');
-  });
-});
-
-app.get("/login",norequireLogin, (req, res) => {
-  res.render("pages/login")
-})
-
-//게시판 댓글 생성
-app.post("/board/comment/:id", (req, res, next) => {
-  connection.query(
-    "INSERT INTO comment (writer, content, board_id) VALUES (?, ?, ?);",
-    [req.session.user, req.body.comment_content, req.params.id],
-    (err, rows, fileds) => {
-      if (err) throw err;
-      else {  
-        console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
-        //댓글 조회
-        connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-          if (err) throw err;
-          connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-            if (err) throw err;
-            
-            res.send({ session : req.session ,comment : results, reply: replies });
-          });
-        });
-      }
-    }
-  );
-});
-
-//게시판 댓글 수정,삭제
-app.post("/board/comment/:id/:action", (req, res, next) => {
-  if(req.params.action==="edit"){ 
-    console.log(req.body.boardId)
-    const updatedContent = req.body.content;
-    connection.query("UPDATE comment SET content = ? WHERE id = ?;",[updatedContent, req.params.id],(err, rows, fileds) => { 
-        if (err) throw err;
-        else {  
-          console.log(`${req.params.id}번 댓글 수정`);
-          //댓글 조회
-          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-            if (err) throw err;
-            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-              if (err) throw err;
-              
-              res.send({ session : req.session ,comment : results, reply: replies });
-            });
-          });
-         
-        }
-      });
-  }
-  else{
-    console.log(req.params.action)
-    connection.query(
-      "DELETE FROM comment WHERE id = ?;",
-      [req.params.id],
-      (err, rows, fileds) => { 
-        if (err) throw err;
-        else {  
-          console.log(`${req.params.id}번 댓글 삭제`);
-          
-          //댓글 조회
-          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-            if (err) throw err;
-            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-              if (err) throw err;
-              
-              res.send({ session : req.session ,comment : results, reply: replies });
-            });
-            
-          });
-        }
-      }
-    ); 
-  }
-});    
- 
 //게시판 대댓글 생성
-app.post("/board/reply/:id", (req, res, next) => { 
-  console.log(`${req.params.id}번 게시글`)
-  connection.query(
-    "INSERT INTO reply (writer, content, comment_id) VALUES (?, ?, ?);",
-    [req.session.user, req.body.replyContent, req.params.id],
-    (err, rows, fileds) => {
-      if (err) throw err;
-      else {  
-        console.log(`${req.params.id}번 게시글 ${rows.insertId}번 댓글 등록`);
-        //댓글 조회
-        connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-          if (err) throw err;
-          connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-            if (err) throw err;
-            
-            res.send({ session : req.session ,comment : results, reply: replies });
-          });
-        });
-      }
-    }
-  );
-});
-
-
-//게시판 대댓글 수정,삭제
-app.post("/board/reply/:id/:action", (req, res, next) => {
-  if(req.params.action==="editreply"){ 
-    console.log(req.body.boardId)
-    const updatedContent = req.body.content;
-    connection.query("UPDATE reply SET content = ? WHERE id = ?;",[updatedContent, req.params.id],(err, rows, fileds) => { 
-        if (err) throw err;
-        else {  
-          console.log(`${req.params.id}번 대댓글 수정`);
-          //댓글,대댓글 조회
-          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-            if (err) throw err;
-            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-              if (err) throw err;
-              
-              res.send({ session : req.session ,comment : results, reply: replies });
-            });
-          });
-         
-        }
-      });
-  }
-  else{
-    console.log(req.params.action)
-    connection.query(
-      "DELETE FROM reply WHERE id = ?;",
-      [req.params.id],
-      (err, rows, fileds) => { 
-        if (err) throw err;
-        else {  
-          console.log(`${req.params.id}번 대댓글 삭제`);
-          
-          //댓글,대댓글 조회
-          connection.query('SELECT b.*, u.nickname, u.profile_image_url FROM comment b INNER JOIN users u ON b.writer = u.id WHERE board_id = ? ORDER BY created_at DESC;', [req.body.boardId], (err, results) => {
-            if (err) throw err;
-            connection.query('SELECT r.*, u.nickname, u.profile_image_url FROM reply r INNER JOIN users u ON r.writer = u.id INNER JOIN comment c ON r.comment_id = c.id WHERE c.board_id = ? ORDER BY r.created_at ASC;', [req.body.boardId], (err, replies) => {
-              if (err) throw err;
-              
-              res.send({ session : req.session ,comment : results, reply: replies });
-            });
-            
-          });
-        }
-      }
-    ); 
-  }
-});    
-
+app.use("/reply",require("./routes/reply"))
 
 //좋아요 클릭시 작동
-app.post('/likes/:id', (req, res) => {  
-  const articleId = req.params.id;
-  const userId = req.session.user;
-  console.log('articleId:', articleId, 'userId:', userId);
-  // 중복 체크
-  connection.query('SELECT * FROM likes WHERE board_id = ? AND user_id = ?', [articleId, userId], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.sendStatus(500); // Internal server error
-    }
-    if (rows.length > 0) {
-      // 이미 좋아요를 누른 경우
-       // 좋아요 삭제
-      connection.query('DELETE FROM likes WHERE board_id = ? AND user_id = ?', [articleId, userId], (err, rows) => {
-        if (err) {
-          console.error(err); 
-        }
-      });
-    } else {  
-      // 좋아요 추가
-      connection.query('INSERT INTO likes (board_id, user_id) VALUES (?, ?);', [articleId, userId], (err, rows,fields) => {
-        if (err) {
-          console.error(err); 
-        }
-      });
-    }//좋아요 개수 반환
-    connection.query('SELECT * FROM board WHERE idx = ?', [articleId], (err, rows) => {
-      if (err) {
-        console.error(err);
-      } else {
-        const article = rows[0];
-        res.send(article);
-      }
-    });
-  });
-});
+app.use("/likes",require("./routes/likes"))
 
+//로그인
+app.use('/login', require("./routes/login"));
 
+//회원가입
+app.use('/signin', require("./routes/signin"));
 
+//마이페이지
+app.use('/mypage', require("./routes/mypage"));
 
- 
-
-app.post("/login",(req,res) => {
-  const loginid =req.body.loginEmail;
-  const loginpassword =req.body.loginPassword;
-  const sql ="SELECT * FROM users WHERE id=? ;"
-  connection.query(sql,[loginid],(err,results)=>{
-    if(err) throw err
-    //로그인 아이디가 틀렸을때
-    if(!results[0]){
-      console.log("아이디틀림");
-      res.send("<script>alert('아이디를 확인하세요.'); window.location.replace('/login');</script>");
-    }
-    else{
-      const user = results[0];
-      crypto.pbkdf2(loginpassword,user.salt, 1, 32, 'sha512',(err,derivedkey)=>{
-        if(err) console.log(err);
-        if(derivedkey.toString('base64')===user.password){
-            console.log(req.session.user)
-            console.log("성공");
-            req.session.nickname = req.body.nickname;
-            req.session.user = loginid;
-            res.redirect('/');
-        }
-        else{
-            console.log("pw틀림");
-            res.send("<script>alert('비밀번호가 틀렸습니다.'); window.location.replace('/login');</script>");
-        }
-      }); 
-    } 
-  })
-})
-
-app.get("/signin",norequireLogin, (req, res) => {
-  res.render("pages/signin")
-})
-
-app.post("/signin",(req,res)=>{
-
-  const salt = crypto.randomBytes(32).toString('base64')// 솔트 생성
-  const hashedPw = crypto.pbkdf2Sync(req.body.password, salt, 1, 32, 'sha512').toString('base64')
-  const param = [req.body.email,req.body.name,req.body.nickname,req.body.age,hashedPw,salt]
-  // 같은 아이디가 있는지확인
-  connection.query("SELECT * FROM `nodeapp`.`users` WHERE `id` = ? ;",[req.body.email],(err, rows) => {
-    if (err) {
-      console.log(err);
-    } 
-    else {
-      if (rows.length > 0) {
-        res.send("<script>alert(`이미 등록된 이메일입니다.`); window.location.replace('/signin');</script>");
-      } 
-      else{
-        connection.query('INSERT INTO `nodeapp`.`users` (`id`, `name`, `nickname`, `age`, `password`, `salt`) VALUES (?,?,?,?,?,?)',param,(err,row) =>{
-          if(err) 
-              console.log(err);
-          else{
-            console.log(`${req.body.name} 회원가입 성공`)
-            res.send("<script>alert(`회원가입을 축하합니다.`);  window.location.replace('/login')</script>")
-          }   
-        });
-      }
-    }
-  }); 
-});
-app.get("/mypage",requireLogin, (req, res) => {
-  connection.query('SELECT * FROM users;', (err, rows) => {
-    console.log(req.session.user)
-    if (err) throw err;
-    const article = rows.find(art => art.id === req.session.user);
-    if(!article) {
-    return res.status(404).send('ID was not found.');
-    }    
-    connection.query('SELECT * FROM board WHERE writer = ?;',[req.session.user], function(error, results, fields) {
-      if (error) throw error;
-      connection.query('SELECT likes.board_id, likes.user_id, likes.created_at, board.idx, board.title, board.likes_cnt, users.nickname FROM likes INNER JOIN board ON likes.board_id = board.idx INNER JOIN users ON board.writer = users.id WHERE likes.user_id =?;',
-        [req.session.user], function(error, likes, fields) {
-        if (error) throw error;
-        else{
-          res.render('pages/mypage',{ session : req.session , article : article , results: results , likes: likes});
-        }
-      });
-    });
-    
-  })
-})
-
-
+//로그아웃
+app.use('/logout', require("./routes/logout"));
   
 
 
 app.get("/ranking", (req, res) => {
 res.render("pages/ranking")
 })
-app.get("/logout",(req,res)=>{
-  req.session.destroy(function(err){
-      res.redirect('/login')
-  })
-})
+
+
 
 app.listen(port, () => {
 console.log(`서버 실행 ${port}port`)

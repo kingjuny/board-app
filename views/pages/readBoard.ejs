@@ -101,7 +101,7 @@
 
     <hr style="border: none; border-top: 1px solid rgb(131, 130, 130);"> 
     <% if(session.user===article.writer) { %>
-        <button type="button" id="updateButton" class="btn btn-primary" onclick="location.href='/board/update/<%= article.idx %>'">수정하기</button> 
+        <button type="button" id="updateButton" class="btn btn-primary" onclick="location.href='/post/update/<%= article.idx %>'">수정하기</button> 
         <button type="button" id="deleteButton" class="btn btn-danger">삭제하기</button>
     <% } %>
    
@@ -251,7 +251,7 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
       saveBtn.addEventListener('click', () => {
         const updatedCommentContent = commentElement.querySelector('[name="edit_comment"]').value;
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/board/comment/${commentId}/${action}`);
+        xhr.open('POST', `/comment/${commentId}/${action}`);
         xhr.setRequestHeader('Content-Type', 'application/json');
         console.log(222)
         
@@ -285,7 +285,7 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
       //**********************************************************댓글 삭제 이벤트 핸들러**********************************************************
     } else if (action === 'delete') {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `/board/comment/${commentId}/${action}`);
+      xhr.open('POST', `/comment/${commentId}/${action}`);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = () => {
         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -338,7 +338,7 @@ document.querySelector('#comment-list').addEventListener('click', (event) => {
     const replyContent = replyForm.querySelector('[name="reply_content"]').value;
     
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/board/reply/${commentId}`);
+    xhr.open('POST', `/reply/comment/${commentId}`);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.onreadystatechange = () => {
       if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
@@ -397,7 +397,7 @@ if (action === 'editreply') {
       saveBtn.addEventListener('click', () => {
         const updatedreplyContent = replyElement.querySelector('[name="edit_reply"]').value;
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/board/reply/${commentId}/${action}`);
+        xhr.open('POST', `/reply/${commentId}/${action}`);
         xhr.setRequestHeader('Content-Type', 'application/json');
       
         
@@ -432,7 +432,7 @@ if (action === 'editreply') {
     } else if (action === 'deletereply') {
       console.log('대댓글 삭제 이벤트 핸들러')
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', `/board/reply/${commentId}/${action}`);
+      xhr.open('POST', `/reply/${commentId}/${action}`);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = () => {
        
@@ -464,7 +464,7 @@ if (action === 'editreply') {
         const commentContent = formData.get("comment_content");
         const boardId = formData.get("board_id");
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/board/comment/<%= article.idx %>");
+        xhr.open("POST", "/comment/post/<%= article.idx %>");
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = () => {
             
@@ -569,9 +569,9 @@ if (action === 'editreply') {
         jQuery('#deleteButton').click(function() {
             var result = confirm('게시글을 삭제하시겠습니까?');
             if (result) {
-                jQuery.post('/board/delete/' + '<%= article.idx %>', function(data) {
+                jQuery.post('/post/delete/' + '<%= article.idx %>', function(data) {
                 alert('게시글이 삭제되었습니다.');
-                location.href = '/search_board';
+                location.href = '/board';
                 });
             }
         });

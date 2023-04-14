@@ -63,11 +63,11 @@
         <button class="change_profile btn btn-primary" data-bs-toggle="dropdown" aria-expanded="false">프로필 사진 변경</button>
         <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
           <!-- 앨범에서 사진 선택 -->
-          <form action="/profile" method="POST" enctype="multipart/form-data" id="upload-form">
+          <form action="/mypage/profile" method="POST" enctype="multipart/form-data" id="upload-form">
             <label for="profile-image-input" class="dropdown-item upload-btn">앨범에서 사진 선택</label>
             <input type="file" name="profile-image" id="profile-image-input" class="visually-hidden">
             <!-- 추가된 부분 -->
-            <script>
+            <script> 
               function confirmChange() {
                 if (confirm("프로필 사진을 변경 하시겠습니까?")) {
                   document.getElementById("upload-form").submit();
@@ -76,7 +76,7 @@
               document.getElementById("profile-image-input").addEventListener("change", confirmChange);
             </script>
           </form>
-          <form action="/profile" method="POST" id="default-profile-form">
+          <form action="/mypage/profile" method="POST" id="default-profile-form">
             <button type="submit" class="dropdown-item" href="#">기본 프로필로 변경</button>
           </form>
         </ul>
@@ -122,7 +122,7 @@
         if (confirm("프로필 사진을 변경 하시겠습니까?")) {
           const formData = new FormData();
           formData.append('profile-image', profileImage);
-          fetch('/profile', {
+          fetch('/mypage/profile', {
             method: 'POST',
             body: formData
           }).then(function(response) {
@@ -141,7 +141,7 @@
     defaultProfileForm.addEventListener('submit', function(e) {
       e.preventDefault();
       if (confirm("기본 프로필 사진으로 변경 하시겠습니까?")) {
-        fetch('/profile', {
+        fetch('/mypage/profile', {
           method: 'POST',
           body: 'use-default-profile=true',
           headers: {

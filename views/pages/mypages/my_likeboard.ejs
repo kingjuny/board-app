@@ -35,7 +35,7 @@
             </svg>
             <%= likes[i].likes_cnt %>
           </td>
-          <td><a href="/board/read/<%= likes[i].idx %>"><%= likes[i].title %></a></td>
+          <td><a href="/post/read/<%= likes[i].idx %>"><%= likes[i].title %></a></td>
           <td><%= likes[i].nickname %></td>
           <td><%= formatDateTime(likes[i].created_at) %></td>
         </tr>
