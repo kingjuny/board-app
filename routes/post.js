@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
 const multer = require('multer'); 
 const path = require('path');
 const postController = require('../controllers/postController')

@@ -1,4 +1,4 @@
-const connection = require('../db');
+const connection = require('./db');
 
 exports.checkDuplicate = (articleId, userId, callback) => {
   connection.query('SELECT * FROM likes WHERE board_id = ? AND user_id = ?', [articleId, userId], callback);

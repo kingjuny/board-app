@@ -1,9 +1,9 @@
 // models/user.js
-const connection = require('../db');
+const connection = require('./db');
 const crypto = require('crypto');
 
 
-exports.login = (id, password, callback) => {
+exports.login = (id, password, callback) => { 
     const sql = "SELECT * FROM users WHERE id=? ;";
     connection.query(sql, [id], (err, results) => {
         if (err) {

@@ -1,5 +1,5 @@
 // models/board.js
-const connection = require('../db');
+const connection = require('./db');
 
 const ITEMS_PER_PAGE = 15;
 

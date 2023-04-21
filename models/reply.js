@@ -1,4 +1,4 @@
-const connection = require('../db');
+const connection = require('./db');
 
 exports.insertReply = (params, callback) => {
     connection.query("INSERT INTO reply (writer, content, comment_id) VALUES (?, ?, ?);" , params,(err, results) => {

@@ -1,5 +1,5 @@
 // writeModel.js
-const connection = require('../db');
+const connection = require('./db');
 
 exports.insertPost = (params, callback) => {
   connection.query('INSERT INTO board (title, writer, content, image_path) VALUES (?, ?, ?, ?);', params, (err, results) => {

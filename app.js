@@ -4,7 +4,7 @@ const mySQLstore = require("express-mysql-session")(session);
 const dbconfig = require("./config/dbconfig.json")//데이터베이스 정보
 const app = express();
 const port = 3000;
-
+ 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 //뷰파일 설정

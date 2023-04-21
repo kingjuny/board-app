@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const connection = require('../db');
 const commentController = require('../controllers/commentController')
 
 //게시판 댓글 생성

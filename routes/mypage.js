@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer'); 
 const path = require('path');
-const connection = require('../db');
 const mypageController =require('../controllers/mypageController')
 
 // 프로필 변경 multer 미들웨어 설정
