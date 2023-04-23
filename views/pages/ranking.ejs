@@ -1,3 +1,181 @@
 <%- include ('../layouts/header') -%>
-<h1>랭킹</h1>
+<%  function formatDateTime(dateTimeString) {
+    const insertTime = new Date(dateTimeString);
+    const year = insertTime.getFullYear();
+    const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+    const date = insertTime.getDate();
+    const hours = insertTime.getHours();
+    const minutes = insertTime.getMinutes();
+    
+    // 날짜와 시간을 문자열로 변환합니다.
+    const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+   
+    
+    // 날짜와 시간을 결합한 문자열을 반환합니다.
+    return `${formattedDate}`;
+  }
+  
+  %>
+
+  <style>
+    .boardtable {
+      min-height: 700px;
+    }
+    
+    .board {
+        
+        padding: 40px;
+        border-radius: 10px;
+        max-width: 1300px; 
+        min-width: 1000px;
+        
+        margin: auto;
+    }
+    
+    .dropdown-wrapper.show-menu img {
+    display: none;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+  
+    th,
+    td {
+      text-align: center;
+      padding: 10px;
+    }
+  
+   
+  
+    tbody tr {  
+      height: 50px;
+    }
+</style>
+<div class="board ">
+  
+    <div style="position: relative;">
+        <h2 style="display: inline-block; margin-bottom: 20px ;">인기 게시물</h2>
+    </div>
+    <ul class="nav nav-tabs " id="v-pills-tab" role="tablist" aria-orientation="vertical">
+        <button class="nav-link active" id="v-pills-daybest-tab" data-bs-toggle="pill" data-bs-target="#v-pills-home"   aria-selected="true">일간BEST</button>
+        <button class="nav-link" id="v-pills-weekbest-tab" data-bs-toggle="pill" data-bs-target="#v-pills-profile"  aria-selected="false">주간BEST</button>
+        <button class="nav-link" id="v-pills-monthbest-tab" data-bs-toggle="pill" data-bs-target="#v-pills-disabled"   aria-selected="false" >월간BEST</button>
+      </ul>
+      
+   
+    <div class="boardtable">
+  <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">좋아요</th>
+                <th scope="col">조회</th>
+                <th scope="col">제목</th>
+                <th scope="col">작성자</th>
+                <th scope="col">작성일</th>
+            </tr>
+        </thead>
+      <tbody id="boardMaster">
+        <% for (let i = 0; i < results.length; i++) { %>
+          <tr>
+            <td>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+                </svg><%= results[i].likes_cnt %>
+            </td>
+            <td><%= results[i].view_cnt %></td>
+            <td><a href="/post/read/<%= results[i].idx %>"><%= results[i].title %></a></td>
+            <td><%= results[i].nickname %></td>
+            <td><%= formatDateTime(results[i].insert_time) %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
 <%- include ('../layouts/footer') -%>
+<script>
+function updateBoardTable(result) {
+  let boardMaster = document.getElementById("boardMaster");
+  let html = "";
+  for (let i = 0; i < result.length; i++) {
+    html += `
+      <tr>
+        <td>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+          </svg>${result[i].likes_cnt}
+        </td>
+        <td>${result[i].view_cnt}</td>
+        <td><a href="/post/read/${result[i].idx}">${result[i].title}</a></td>
+        <td>${result[i].nickname}</td>
+        <td>${formatDateTime(result[i].insert_time)}</td>
+      </tr>
+    `;
+  }
+  boardMaster.innerHTML = html;
+}
+
+
+// 일간BEST 버튼 클릭 시
+$('#v-pills-daybest-tab').click(function() {
+  $.ajax({
+    url: '/ranking/daybest',
+    type: 'post',
+    dataType: 'json',
+    success: function(result) {
+      // 서버에서 받은 결과로 인기 게시물 목록 업데이트
+      console.log(result)
+      updateBoardTable(result.results);
+    },
+    error: function(xhr, status, error) {
+      console.error(error);
+    }
+  });
+});
+
+// 주간BEST 버튼 클릭 시
+$('#v-pills-weekbest-tab').click(function() {
+  $.ajax({
+    url: '/ranking/weekbest',
+    type: 'post',
+    dataType: 'json',
+    success: function(result) {
+      // 서버에서 받은 결과로 인기 게시물 목록 업데이트
+      updateBoardTable(result.results);
+    },
+    error: function(xhr, status, error) {
+      console.error(error);
+    }
+  });
+});
+
+// 월간BEST 버튼 클릭 시
+$('#v-pills-monthbest-tab').click(function() {
+  $.ajax({
+    url: '/ranking/monthbest',
+    type: 'post',
+    dataType: 'json',
+    success: function(result) {
+      // 서버에서 받은 결과로 인기 게시물 목록 업데이트
+      updateBoardTable(result.results);
+    },
+    error: function(xhr, status, error) {
+      console.error(error);
+    }
+  });
+});
+function formatDateTime(dateTimeString) {
+    const insertTime = new Date(dateTimeString);
+    const year = insertTime.getFullYear();
+    const month = insertTime.getMonth() + 1;
+    const date = insertTime.getDate();
+    const hours = insertTime.getHours();
+    const minutes = insertTime.getMinutes();
+
+    const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+
+    return `${formattedDate}`;
+  }
+
+
+</script>

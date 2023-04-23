@@ -102,4 +102,39 @@ exports.updatePost = (params,callback) => {
     })
   };
 
+  exports.getDayTop10Post = (callback) => {
+    connection.query(
+      "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE DATE_FORMAT(insert_time, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') ORDER BY likes_cnt DESC, view_cnt DESC LIMIT 10;"
+    , (err, results) => {
+      if (err) {
+        return callback(err);
+        }
+        callback(null, results);
+    })
+  }; 
+
+  exports.getWeekTop10Post = (callback) => {
+    connection.query(
+      "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE insert_time BETWEEN DATE_SUB(NOW(), INTERVAL 1 WEEK) AND NOW() ORDER BY likes_cnt DESC, view_cnt DESC LIMIT 10;;"
+    , (err, results) => {
+      if (err) {
+        return callback(err);
+        }
+        callback(null, results);
+    })
+  };
+
+  exports.getMonthTop10Post = (callback) => {
+    connection.query(
+      "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE insert_time BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW() ORDER BY likes_cnt DESC, view_cnt DESC LIMIT 10;;"
+    , (err, results) => {
+      if (err) {
+        return callback(err);
+        }
+        callback(null, results);
+    })
+  };
+
+  
+
 

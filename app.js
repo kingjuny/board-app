@@ -81,11 +81,10 @@ app.use('/logout', require("./routes/logout"));
   
 
 
-app.get("/ranking", (req, res) => {
-res.render("pages/ranking")
-})
+app.use('/ranking', require("./routes/ranking"));
 
 
+  
 
 app.listen(port, () => {
 console.log(`서버 실행 ${port}port`)
