@@ -83,7 +83,7 @@ exports.updatePost = (params,callback) => {
   };
 
   exports.getMyPost = (user, callback) => {
-    connection.query('SELECT * FROM board WHERE writer = ?;', user, (err, rows) => {
+    connection.query('SELECT * FROM board WHERE writer = ? ORDER BY insert_time DESC;', user, (err, rows) => {
       if (err) {
         return callback(err);
         }
@@ -93,7 +93,7 @@ exports.updatePost = (params,callback) => {
 
   exports.getLikePost = (user, callback) => {
     connection.query(
-      'SELECT likes.board_id, likes.user_id, likes.created_at, board.idx, board.title, board.likes_cnt, users.nickname FROM likes INNER JOIN board ON likes.board_id = board.idx INNER JOIN users ON board.writer = users.id WHERE likes.user_id =?;'
+      'SELECT likes.board_id, likes.user_id, likes.created_at, board.idx, board.title, board.likes_cnt, users.nickname FROM likes INNER JOIN board ON likes.board_id = board.idx INNER JOIN users ON board.writer = users.id WHERE likes.user_id =? ORDER BY created_at DESC;'
     , user, (err, rows) => {
       if (err) {
         return callback(err);

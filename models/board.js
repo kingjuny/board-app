@@ -5,7 +5,7 @@ const ITEMS_PER_PAGE = 15;
 
 exports.getAllPosts = (page, callback) => {
   let offset = (page - 1) * ITEMS_PER_PAGE;
-  const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id LIMIT ?, ?";
+  const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id ORDER BY insert_time DESC LIMIT ?, ? ";
   const values = [offset, ITEMS_PER_PAGE];
 
   connection.query(query, values, (error, results) => {
@@ -38,7 +38,7 @@ exports.getAllPosts = (page, callback) => {
 
 exports.searchPost = (q, page, callback) => {
   let offset = (page - 1) * ITEMS_PER_PAGE;
-  const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? OR u.nickname LIKE ? LIMIT ?, ?";
+  const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? OR u.nickname LIKE ? ORDER BY insert_time DESC LIMIT ?, ?";
   const values = ["%" + q + "%", "%" + q + "%", "%" + q + "%", offset, ITEMS_PER_PAGE];
 
   connection.query(query, values, (error, results) => {
