@@ -1,10 +1,10 @@
 // controllers/boardController.js
 const boardModel = require('../models/board');
-
+const ITEMS_PER_PAGE = 15;
 exports.getAllPosts = (req, res) => {
     let page = req.query.page || 1;
 
-    boardModel.getAllPosts(page, (error, data) => {
+    boardModel.getAllPosts(page,ITEMS_PER_PAGE, (error, data) => {
         if (error) {
             console.log(error);
             res.sendStatus(500);
@@ -18,7 +18,7 @@ exports.searchPost = (req, res) => {
     const q = req.query.search_post;
     let page = req.query.page || 1;
 
-    boardModel.searchPost(q, page, (error, data) => {
+    boardModel.searchPost(q, page,ITEMS_PER_PAGE, (error, data) => {
         if (error) {
             console.log(error);
             res.sendStatus(500);

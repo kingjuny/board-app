@@ -1,9 +1,9 @@
 // models/board.js
 const connection = require('./db');
 
-const ITEMS_PER_PAGE = 15;
 
-exports.getAllPosts = (page, callback) => {
+
+exports.getAllPosts = (page,ITEMS_PER_PAGE, callback) => {
   let offset = (page - 1) * ITEMS_PER_PAGE;
   const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id ORDER BY insert_time DESC LIMIT ?, ? ";
   const values = [offset, ITEMS_PER_PAGE];
@@ -36,7 +36,7 @@ exports.getAllPosts = (page, callback) => {
   });
 };
 
-exports.searchPost = (q, page, callback) => {
+exports.searchPost = (q, page,ITEMS_PER_PAGE, callback) => {
   let offset = (page - 1) * ITEMS_PER_PAGE;
   const query = "SELECT b.*, u.nickname FROM board b INNER JOIN users u ON b.writer = u.id WHERE b.title LIKE ? OR b.content LIKE ? OR u.nickname LIKE ? ORDER BY insert_time DESC LIMIT ?, ?";
   const values = ["%" + q + "%", "%" + q + "%", "%" + q + "%", offset, ITEMS_PER_PAGE];

@@ -1,4 +1,194 @@
 <%- include ('../layouts/header') -%>
+<%  function formatDateTime(dateTimeString) {
+    const insertTime = new Date(dateTimeString);
+    const year = insertTime.getFullYear();
+    const month = insertTime.getMonth() + 1; // 월은 0부터 시작하므로 1을 더해줍니다.
+    const date = insertTime.getDate();
+    const hours = insertTime.getHours();
+    const minutes = insertTime.getMinutes();
+    
+    // 날짜와 시간을 문자열로 변환합니다.
+    const formattedDate = `${year}.${month < 10 ? '0' + month : month}.${date < 10 ? '0' + date : date}`;
+   
+    
+    // 날짜와 시간을 결합한 문자열을 반환합니다.
+    return `${formattedDate}`;
+  }
+  
+  %>
+<style>
+  .homeimg {
+    width: 100%;
+    height: 500px;
+  }
+  .search {
+  position: absolute;
+  width: 300px;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+}
 
-<a>hihihihihi</a>
+input {
+  width: 100%;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.searchimg {
+  position : absolute;
+  width: 17px;
+  top: 10px;
+  right: 12px;
+  margin: 0;
+}
+.home {
+    padding: 40px;
+      border-radius: 10px;
+      max-width: 1300px; 
+      min-width: 1000px;
+      
+      margin: auto;
+}
+.container {
+  display: flex;
+  justify-content: space-between;
+  border-spacing: 0 10px;
+}
+
+.allposts {
+  float: left;
+  border: 1px solid lightgray;
+  width: 500px;
+  padding: 10px;
+  
+}
+
+.monthbest {
+  float: left;
+  border: 1px solid lightgray;
+  width: 500px;
+  padding: 10px;
+ 
+}
+
+
+table {
+    border-collapse: separate;
+  border-spacing: 0;
+   
+  }
+
+  td {
+  border-top: 1px solid lightgray;
+}
+
+ 
+
+  tbody tr {  
+    height: 40px;
+  }
+
+
+
+</style>
+
+<div class="home">
+    <div style="position: relative; margin-bottom: 50px;">
+    
+        <form action="/board/search" method="get" id="search-form">
+        <div class="search">
+            <input type="text" name="search_post"placeholder="검색어 입력">
+            <img src="https://s3.ap-northeast-2.amazonaws.com/cdn.wecode.co.kr/icon/search.png" class="searchimg" onclick="submitForm()">
+        </div>
+        </form>
+        <script>
+          function submitForm() {
+            var form = document.getElementById("search-form");
+            form.submit();
+          }
+        </script>
+    </div>
+    <div >
+        <img src="/images/whale-gbeea54d99_1920.jpg"class="homeimg"  >
+    </div>
+
+    <div class="container" style="margin-top: 40px;">
+      <div class=" d-flex flex-column">
+        <div class="d-flex align-items-center">
+          <h6>전체 게시물</h6>
+          <a href="/board" style="font-size: smaller; color: #888; margin-left: auto;">전체 보기></a>
+        </div>
+          
+    <table class="allposts">
+      
+        <thead>
+          <tr>
+            <th scope="col">조회</th>
+            <th scope="col">제목</th>
+            <th scope="col">작성자</th>
+            <th scope="col">좋아요</th>
+            <th scope="col">작성일</th>
+            
+          </tr>
+        </thead>
+        
+        <tbody id="boardMaster">
+          <% for (let i = 0; i < allposts.results.length; i++) { %>
+            <tr>
+              <td><%= allposts.results[i].view_cnt %></td>
+              <td><a href="/post/read/<%= allposts.results[i].idx %>"><%= allposts.results[i].title %></a></td>
+              <td><%= allposts.results[i].nickname %></td>
+              <td>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+                </svg><%= allposts.results[i].likes_cnt %>
+              </td>
+              <td><%= formatDateTime(allposts.results[i].insert_time) %></td>
+              
+            </tr>
+            
+          <% } %>
+        </tbody>
+    </table>
+  </div>
+  <div class=" d-flex flex-column">
+    <div class="d-flex align-items-center">
+      <h6>인기 게시물</h6>
+      <a href="/ranking" style="font-size: smaller; color: #888; margin-left: auto;">전체 보기></a>
+    </div>
+    <table class="monthbest">
+        <thead>
+            <tr>
+                <th scope="col">좋아요</th>
+                <th scope="col">조회</th>
+                <th scope="col">제목</th>
+                <th scope="col">작성자</th>
+                <th scope="col">작성일</th>
+            </tr>
+        </thead>
+      <tbody id="boardMaster">
+        <% for (let i = 0; i < monthbest.length; i++) { %>
+          <tr>
+            <td>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="red" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"></path>
+                </svg><%=  monthbest[i].likes_cnt %>
+            </td>
+            <td><%= monthbest[i].view_cnt %></td>
+            <td><a href="/post/read/<%= monthbest[i].idx %>"><%= monthbest[i].title %></a></td>
+            <td><%= monthbest[i].nickname %></td>
+            <td><%= formatDateTime(monthbest[i].insert_time) %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+
 <%- include ('../layouts/footer') -%>
