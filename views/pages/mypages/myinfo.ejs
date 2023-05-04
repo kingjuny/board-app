@@ -108,10 +108,28 @@
         <td class="myinfo_td"><%= article.nickname ||"없음" %></td>
     </tr>
     
-       
-    
 </table>
+<form id="secession-form" method="post" action="/secession">
+  <button onclick="auth(event)">탈퇴하기</button>
+  <input type="hidden" name="password" id="password-input">
+</form>
+
 <script>
+    function auth(event) {
+      event.preventDefault(); // 기본 이벤트 동작 중단
+      const password = prompt("패스워드를 입력해주세요.");
+      if (password !== null) {
+        document.getElementById("password-input").value = password;
+        
+        if (confirm("정말 탈퇴하시겠습니까?")) {
+      document.getElementById("secession-form").submit();
+    }
+      }
+    }
+
+
+
+
     const uploadForm = document.querySelector('#upload-form');
     const defaultProfileForm = document.querySelector('#default-profile-form');
     

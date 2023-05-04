@@ -83,7 +83,7 @@ app.use('/logout', require("./routes/logout"));
 
 app.use('/ranking', require("./routes/ranking"));
 
-
+app.use('/secession', require("./routes/secession"));
   
 
 app.listen(port, () => {

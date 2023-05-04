@@ -76,5 +76,13 @@ exports.addUser = (userData, callback) => {
       callback(null, rows);
     })
   }
-  
+  //유저 정보 삭제 메소드
+  exports.dleteUser = (params,callback) => {
+    connection.query('DELETE from users WHERE id = ?', params,(err, rows) => {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, rows);
+    })
+  }
   
